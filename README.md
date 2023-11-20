@@ -2,7 +2,9 @@
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device. OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. This example aims to demonstrate the fundamental concepts of OFDM transmission and reception in a real-world scenario using the PlutoSDR. Also 3GPP CDL-C channel model is implemented for testing without SDR radio.
+This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. This follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy, which contains more documentation on basic consepts. Please note this is work in progress and in quie early stage. 
+
+OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. This example aims to demonstrate the fundamental concepts of OFDM transmission and reception in a real-world scenario using the PlutoSDR while utilising PyTorch where possible. However, not all functions can be based on PyTorch as the SDR libraries require NumPy input, and also output is in NumPy format. Also 3GPP CDL-C channel model is implemented for testing without SDR radio.
 
 The provided functions and classes can facilitate an evaluation of OFDM systems in a real-world transmission scenario. The performance graph depicted below, generated using the integrated libraries in conjunction with the 20-ofdm-performance-testing.ipynb notebook, serves as an illustrative example. Examination of the graph reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
 
@@ -39,8 +41,9 @@ open the jupyter notebook
 ### libraries
 
 - `SDR_Pluto.py` class for handling SDR functionality
-- `OFDM_SDR_Functions.py` OFDM building block functions, channel simulation
+- `OFDM_SDR_Functions_torch.py` OFDM building block functions, channel simulation
 - `config.py` OFDM related configuration parameters are stored here
+- `ML_lib.py` AIML models and supporting functions, e.g. channel estimation, demodulation and equalizer can be placed here.
 
 ## Brief intro to OFDM workflow
 
@@ -113,20 +116,25 @@ this entails concatenating the demapped bits from each subcarrier, converting th
 ### Bit Error Rate (BER) calculation
 Compare the original transmitted bit stream with the received bit stream, bit by bit and calculate BER.
 
-
-
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+## References
 
-Special appreciation goes to Dr. Marc Lichtman for his invaluable contributions to the field of digital signal processing through his educational material available at PySDR (https://pysdr.org/index.html). His work has been a substantial resource, providing thorough explanations and practical insights on implementing signal processing concepts using Python. 
+“PySDR: A Guide to SDR and DSP Using Python — PySDR: A Guide to SDR and DSP Using Python 0.1 Documentation.” Accessed November 15, 2021. https://pysdr.org/index.html.
 
-I would also like to extend my gratitude to Max, whose extensive work on digital signal processing is accessible at DSP Illustrations (https://dspillustrations.com/pages/index.html).
+“DSPIllustrations.Com.” Accessed November 15, 2021. https://dspillustrations.com/pages/index.html.
 
-Several of the implementation concepts presented herein are derived from the aforementioned literature.
+Honkala, Mikko, Dani Korpi, and Janne M. J. Huttunen. “DeepRx: Fully Convolutional Deep Learning Receiver.” IEEE Transactions on Wireless Communications 20, no. 6 (June 2021): 3925–40. https://doi.org/10.1109/TWC.2021.3054520.
+
+Hoydis, Jakob, Sebastian Cammerer, Fayçal Ait Aoudia, Avinash Vem, Nikolaus Binder, Guillermo Marcus, and Alexander Keller. “Sionna: An Open-Source Library for Next-Generation Physical Layer Research.” arXiv:2203.11854 [Cs, Math], March 22, 2022. http://arxiv.org/abs/2203.11854.
+
+Paszke, Adam, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen, et al. “PyTorch: An Imperative Style, High-Performance Deep Learning Library.” In Advances in Neural Information Processing Systems 32, 8024–35. Curran Associates, Inc., 2019. http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-performance-deep-learning-library.pdf.
+
+“ADALM-PLUTO Evaluation Board | Analog Devices.” Accessed November 15, 2021. https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/adalm-pluto.html#eb-overview.
+
+
 
 ## Disclaimer: Legal Compliance in Radio Transmission
 
