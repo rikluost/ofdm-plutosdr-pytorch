@@ -94,13 +94,13 @@ $\mathbf{H}$, the radio channel matrix, can be constructed here either by transm
 
 #### Transmission of IQ signals (SDR)
 
-Below shows the power spectral density of transmitted signal \(\mathbf{x}\):
+Below shows the power spectral density of transmitted signal $\mathbf{x}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_TX.png) 
 
 #### Reception of IQ signals (SDR)
 
-Below shows the power spectral density of received signal \(\mathbf{y}\):
+Below shows the power spectral density of received signal $\mathbf{y}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_RX.png) 
 
