@@ -81,14 +81,14 @@ The Cyclic Prefix (CP) in an OFDM system involves appending a copy of the end of
 
 A basic linear model for a channel is:
 
-`\[ \mathbf{y} = \mathbf{Hx} + \mathbf{n} \]`
+$\mathbf{y} = \mathbf{Hx} + \mathbf{n}$
 
 where:
 
-- \(\mathbf{y}\) is the received signal vector
-- \(\mathbf{H}\) is the channel matrix
-- \(\mathbf{x}\) is the transmitted signal vector
-- \(\mathbf{n}\) is the noise vector
+- $\mathbf{y}$ is the received signal vector
+- $\mathbf{H}$ is the channel matrix
+- $\mathbf{x}$ is the transmitted signal vector
+- $\mathbf{n}$ is the noise vector
 
 \(\mathbf{H}\), the radio channel matrix, can be constructed here either by transmitting the signal \(\mathbf{x}\) with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified 3GPP CDL-C radio channel model. Noise, in case of SDR is naturally injected into the signal, while in case of using CDL-C, it is added separately.
 
