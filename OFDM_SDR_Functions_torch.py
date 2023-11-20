@@ -95,16 +95,21 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
     0 = DRX
     1 = PDSCH
     2 = pilots
-    5 = DC
+    3 = DC
     '''
     # Create a mask with all ones
     TTI_mask = torch.ones((S, F), dtype=torch.int8) # all ones
 
     # Set symbol Sp for pilots
     TTI_mask[Sp, torch.arange(0, F, Fp)] = 2 # for pilots TX1
+    # Ensure the first subcarrier is a pilot
+    TTI_mask[Sp, 0] = 2
+
+    # Ensure the last subcarrier is a pilot
+    TTI_mask[Sp, F - 1] = 2
 
     # DC
-    TTI_mask[:, F // 2] = 5 # DC to non-allocable power (oscillator phase noise)
+    TTI_mask[:, F // 2] = 3 # DC to non-allocable power (oscillator phase noise)
 
     # Add FFT offsets
     TTI_mask = torch.cat((torch.zeros(S, FFT_offset, dtype=torch.int8), TTI_mask, torch.zeros(S, FFT_offset, dtype=torch.int8)), dim=1)
