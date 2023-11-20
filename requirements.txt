@@ -1,0 +1,5 @@
+numpy==1.26.1
+pyadi-iio 
+pylibiio==0.25
+scipy
+pandas
