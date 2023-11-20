@@ -678,6 +678,8 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
 
     # Find the offset with the maximum correlation
     offset = torch.argmax(corr_result).item()
+    if offset > rx_len - tx_len + leading_zeros:
+        offset = offset - rx_len - leading_zeros
 
     # Adjust offset for leading zeros
     offset = offset + leading_zeros
