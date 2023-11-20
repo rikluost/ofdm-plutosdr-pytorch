@@ -1,5 +1,6 @@
-numpy==1.26.1
+numpy
 pyadi-iio 
-pylibiio==0.25
+pylibiio
 scipy
 pandas
+torch

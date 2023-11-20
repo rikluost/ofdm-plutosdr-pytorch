@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. This follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy, which contains more documentation on basic consepts. Please note this is work in progress and in quie early stage. 
+This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. Neural netowrk-based receiver is planned. This follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy, which contains more documentation on basic consepts. Please note this is work in progress and in early stage. 
 
 OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. This example aims to demonstrate the fundamental concepts of OFDM transmission and reception in a real-world scenario using the PlutoSDR while utilising PyTorch where possible. However, not all functions can be based on PyTorch as the SDR libraries require NumPy input, and also output is in NumPy format. Also 3GPP CDL-C channel model is implemented for testing without SDR radio.
 
