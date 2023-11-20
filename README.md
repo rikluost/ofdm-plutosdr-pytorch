@@ -14,7 +14,7 @@ The provided functions and classes can facilitate an evaluation of OFDM systems 
 
 Before running the example, ensure that you have the following prerequisites installed and configured:
 
-Python 3.10 or later, numPy, scipy, itertools, matplotlib, libiio
+Python 3.10 or later, numPy, scipy, itertools, matplotlib, libiio, torch
 PlutoSDR drivers and utilities
 
 The PlutoSDR device should also be properly connected to your computer and accessible through the network or USB interface.
@@ -81,7 +81,7 @@ The Cyclic Prefix (CP) in an OFDM system involves appending a copy of the end of
 
 A basic linear model for a channel is:
 
-\[ \mathbf{y} = \mathbf{Hx} + \mathbf{n} \]
+`\[ \mathbf{y} = \mathbf{Hx} + \mathbf{n} \]`
 
 where:
 
