@@ -1,4 +1,4 @@
-# Over-the-Air OFDM Transmission with PlutoSDR
+# Over-the-Air OFDM Transmission with PlutoSDR, PyTorch implementation
 
 ## Introduction
 
@@ -75,11 +75,32 @@ The parallel data streams, which have been modulated onto different subcarriers,
 ### CP addition
 The Cyclic Prefix (CP) in an OFDM system involves appending a copy of the end of an OFDM symbol to its beginning, mitigating intersymbol interference and maintaining subcarrier orthogonality. This ensures reliable data transmission over multipath channels and simplifies channel equalization at the receiver.
 
-### Transmission of IQ signals (SDR)
+### Radio Channel
+
+#### Radio Channel
+
+A basic linear model for a channel is:
+
+\[ \mathbf{y} = \mathbf{Hx} + \mathbf{n} \]
+
+where:
+
+- \(\mathbf{y}\) is the received signal vector
+- \(\mathbf{H}\) is the channel matrix
+- \(\mathbf{x}\) is the transmitted signal vector
+- \(\mathbf{n}\) is the noise vector
+
+\(\mathbf{H}\), the radio channel matrix, can be constructed here either by transmitting the signal \(\mathbf{x}\) with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified 3GPP CDL-C radio channel model. Noise, in case of SDR is naturally injected into the signal, while in case of using CDL-C, it is added separately.
+
+#### Transmission of IQ signals (SDR)
+
+Below shows the power spectral density of transmitted signal \(\mathbf{x}\):
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_TX.png) 
 
-### Reception of IQ signals (SDR)
+#### Reception of IQ signals (SDR)
+
+Below shows the power spectral density of received signal \(\mathbf{y}\):
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_RX.png) 
 
@@ -97,7 +118,7 @@ The received time-domain signal is converted back into the frequency domain usin
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTI_RX.png) 
 
 ### Channel Estimation
-Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response.
+Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is \(\mathbf{H}\), the estimated channel matrix.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/ChannelEstimate.png) 
 
