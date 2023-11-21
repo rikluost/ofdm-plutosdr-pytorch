@@ -36,7 +36,7 @@ open the jupyter notebooks, see below.
 ### notebooks
 
 - `00-setup-pluto-MacOS.ipynb` hints on how to set up plutoSdr on Mac M1
-- `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and rx_gain values
+- `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values
 - `10-ofdm-example-func.ipynb` end to example of how OFDM transmission and reception works
 - `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
 
@@ -50,17 +50,21 @@ open the jupyter notebooks, see below.
 ## Brief intro to OFDM workflow
 
 ### TTI Mask Creation
-Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the time-domain constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data.
+
+Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the allocating the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImask.png) 
 
 ### Data stream creation
-When filling a TTI with data, a data stream is created and filled with random data for the purpose of transmission. This data is then stored at the transmitting end to enable comparison with the received data at the other end of the OFDM system. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
+
+A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then used for modulating the TTI, and stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
 
 ### Serial to parallel
+
 The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into multiple sub-streams, which are then simultaneously transmitted on different orthogonal subcarriers.
 
 ### Modulation
+
 The process of encoding the parallel data streams onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
 
 Example of the constellation of a common QAM modulation scheme:
