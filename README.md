@@ -55,6 +55,8 @@ Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves s
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImask.png) 
 
+Fig 2. TTI mask.
+
 ### Data stream creation
 
 A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then used for modulating the TTI, and stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
@@ -70,8 +72,12 @@ The process of encoding the parallel data streams onto the different subcarriers
 Example of the constellation of a common QAM modulation scheme:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/QAMconstellation.png) 
 
+Fig 3. Constellation.
+
 The TTI mask after filled with modulated symbols:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImod.png) 
+
+Fig 4. Modulated TTI.
 
 ### Conversion of frequency domain symbols into time domain (FFT)
 The parallel data streams, which have been modulated onto different subcarriers, are transformed from the frequency domain back to the time domain using an IFFT (Inverse Fast Fourier Transform).
@@ -102,16 +108,22 @@ Below shows the power spectral density of transmitted signal $\mathbf{x}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_TX.png) 
 
+Fig 5. Power spectral density of the signal fed to the SDR transmitter.
+
 #### Reception of IQ signals (SDR)
 
 Below shows the power spectral density of received signal $\mathbf{y}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_RX.png) 
 
+Fig 6. Power spectral density of the signal received from the SDR receiver.
+
 ### Synchronisation and CP Removal
 Synchronisation is done by correlation of the transmitted signal with the received signal. The unmodulated 500 samples between the TTI's are simply to measure noise level for the SINR estimation. The earlier added CP from each received OFDM symbol is discarded before processing.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXsignal_sync.png) 
+
+Fig 7. Synchronisation by correlation.
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 
@@ -119,17 +131,23 @@ The received time-domain signal is converted back into the frequency domain usin
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTI_RX.png) 
 
+Fig 8. Received TTI before the equalisation.
+
 ### Channel Estimation
 
 Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/ChannelEstimate.png) 
 
+Fig 9. Absolute value of the received pilot symbols.
+
 ### Equalization
 
 Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. More advanced methods do exist.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXdSymbols.png) 
+
+Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
 
 ### Symbol demapping
 
