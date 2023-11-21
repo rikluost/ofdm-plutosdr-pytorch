@@ -169,6 +169,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## References
 
+Chang, Robert W. "Synthesis of Band-Limited Orthogonal Signals for Multichannel Data Transmission." Bell System Technical Journal 45 (December 1966): 1775-1796.
+
 “PySDR: A Guide to SDR and DSP Using Python — PySDR: A Guide to SDR and DSP Using Python 0.1 Documentation.” Accessed November 15, 2021. https://pysdr.org/index.html.
 
 “DSPIllustrations.Com.” Accessed November 15, 2021. https://dspillustrations.com/pages/index.html.
