@@ -61,7 +61,7 @@ Fig 2. TTI mask.
 
 ### Data stream creation
 
-A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then used for modulating the TTI, and stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
+A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then in the following stagtes used for modulating the TTI, and it is also stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
 
 ### Serial to parallel - codewords
 
