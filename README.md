@@ -2,13 +2,15 @@
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. Neural netowrk-based receiver is planned. This follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy. Please note this is work in progress and in early stage.
+This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing, and a neural netowrk-based receiver is planned in near future. This repository follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy. Please note this is work in progress.
 
-OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception in a real-world scenario using the PlutoSDR while utilising PyTorch where possible. Not all functions can be based on PyTorch as the SDR libraries require NumPy input, and also output is in NumPy format. 3GPP CDL-C channel model is implemented for testing or faster training of models without using SDR radio.
+OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing or faster training of models without using an SDR radio.
 
-The provided functions and classes can facilitate an evaluation of OFDM systems in a real-world transmission scenario. The performance graph depicted below, generated using the integrated libraries in conjunction with the 20-ofdm-performance-testing.ipynb notebook, serves as an illustrative example. Examination of the graph reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+The provided functions and classes can facilitate an evaluation of OFDM systems, and build over the air demo set ups. The performance graph depicted below, generated using the integrated libraries in conjunction with the 20-ofdm-performance-testing.ipynb notebook, serves as an illustrative example. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
+
+Fig 1. examination of the graph reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
 
 ## Prerequisites
 
