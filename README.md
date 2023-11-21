@@ -14,7 +14,7 @@ The provided functions and classes can facilitate an evaluation of OFDM systems 
 
 Before running the example, ensure that you have the following prerequisites installed and configured:
 
-Python 3.10 or later, numPy, scipy, itertools, matplotlib, libiio, torch
+Python 3.10 or later, torch, numPy, scipy, itertools, matplotlib, libiio, torch
 PlutoSDR drivers and utilities
 
 The PlutoSDR device should also be properly connected to your computer and accessible through the network or USB interface.
@@ -28,7 +28,7 @@ git clone https://github.com/rikluost/pluto
 
 ```
 cd pluto
-open the jupyter notebook
+open the jupyter notebooks, see below.
 ```
 
 ### notebooks
@@ -47,10 +47,8 @@ open the jupyter notebook
 
 ## Brief intro to OFDM workflow
 
-Under construction
-
 ### TTI Mask Creation
-Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the time-domain constraints for the transmission of different types of data symbols, e.g. pilot symbols and user data.
+Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the time-domain constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImask.png) 
 
@@ -105,36 +103,38 @@ Below shows the power spectral density of received signal $\mathbf{y}$:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_RX.png) 
 
 ### Synchronisation and CP Removal
-Synchronisation is done by correlation of the transmitted signal with the received signal.
-
-The added CP from each received OFDM symbol is discarded before processing.
+Synchronisation is done by correlation of the transmitted signal with the received signal. The unmodulated 500 samples between the TTI's are simply to measure noise level for the SINR estimation. The earlier added CP from each received OFDM symbol is discarded before processing.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXsignal_sync.png) 
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 
-The received time-domain signal is converted back into the frequency domain using an DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the transmitted data.
+The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and transmitted data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTI_RX.png) 
 
 ### Channel Estimation
-Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is \(\mathbf{H}\), the estimated channel matrix.
+
+Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/ChannelEstimate.png) 
 
 ### Equalization
 
-Equalization is the process of compensating for the impairments introduced by the transmission channel. In OFDM systems, equalization typically involves manipulating the received signal in the frequency domain, based on channel state information determined by the channel estimation process.
+Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. More advanced methods do exist.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXdSymbols.png) 
 
 ### Symbol demapping
+
 This is the process of converting the received modulated symbols back into their corresponding bit representations. It involves translating the complex values from the demodulated subcarriers into the original transmitted bits based on the used modulation scheme.
 
 ### Data stream recreation
+
 this entails concatenating the demapped bits from each subcarrier, converting the parallel data streams back into a single serial data stream
 
 ### Bit Error Rate (BER) calculation
+
 Compare the original transmitted bit stream with the received bit stream, bit by bit and calculate BER.
 
 ## License

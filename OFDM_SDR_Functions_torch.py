@@ -575,15 +575,26 @@ def SINR(rx_signal, n_SINR, index):
 
 
 def Demapping(QAM, de_mapping_table):
-    constellation = torch.tensor(list(de_mapping_table.keys()))  # possible constellation points
-    dists = torch.abs(QAM.view(-1, 1) - constellation.view(1, -1))  # distance of RX points to constellation points
-    const_index = torch.argmin(dists, dim=1)  # pick the nearest constellation point
-    hardDecision = constellation[const_index]  # get the transmitted constellation point
+    # Convert the demapping table keys (constellation points) to a tensor
+    constellation = torch.tensor(list(de_mapping_table.keys()))
 
-    # Convert keys to string format for consistent lookup
+    # Calculate the distance between each received QAM point and all possible constellation points
+    # The shape of 'dists' will be (number of QAM points, number of constellation points)
+    dists = torch.abs(QAM.view(-1, 1) - constellation.view(1, -1))
+
+    # Find the index of the nearest constellation point for each QAM point
+    # This index corresponds to the most likely transmitted point
+    const_index = torch.argmin(dists, dim=1)
+
+    # Use the index to get the actual constellation points that were most likely transmitted
+    hardDecision = constellation[const_index]
+
+    # Convert the keys of the demapping table to string format
+    # This is necessary because the tensor elements can't be directly used as dictionary keys
     string_key_table = {str(key.numpy()): value for key, value in de_mapping_table.items()}
 
-    # Extract demapped symbols using the string formatted keys
+    # Use the string keys to demap the symbols
+    # The demapped symbols are the original binary representations before modulation
     demapped_symbols = torch.tensor([string_key_table[str(c.numpy())] for c in hardDecision], dtype=torch.int32)
 
     return demapped_symbols, hardDecision
