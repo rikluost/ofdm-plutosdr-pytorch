@@ -6,7 +6,7 @@ This repository contains a Python implementation of an Over-the-Air (OTA) Orthog
 
 OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing or faster training of models without using an SDR radio.
 
-The provided functions and classes can facilitate an evaluation of OFDM systems, and build over the air demo set ups. The performance graph depicted below, generated using the integrated libraries in conjunction with the 20-ofdm-performance-testing.ipynb notebook, serves as an illustrative example. 
+The provided functions and classes can facilitate an evaluation of OFDM systems, and build over the air demo set ups. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
 
@@ -38,7 +38,7 @@ open the jupyter notebooks, see below.
 ### notebooks
 
 - `00-setup-pluto-MacOS.ipynb` hints on how to set up plutoSdr on Mac M1
-- `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values
+- `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values for your SDR set up
 - `10-ofdm-example-func.ipynb` end to example of how OFDM transmission and reception works
 - `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
 
