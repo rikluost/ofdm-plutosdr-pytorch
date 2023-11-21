@@ -61,6 +61,7 @@ def mapping_table(Qm, plotMap=False):
         plt.ylabel('imaginary')
         plt.title(f'Constellation, modulation order {Qm}')
         plt.savefig('pics/QAMconstellation.png')
+        plt.tight_layout()
         plt.show()
 
     return mapping_out, demapping_out # mapping table, demapping table
@@ -122,6 +123,7 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         plt.savefig('pics/TTImask.png')
+        plt.tight_layout()
         plt.show()
 
     return TTI_mask
