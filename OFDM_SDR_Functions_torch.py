@@ -574,7 +574,7 @@ def SINR(rx_signal, n_SINR, index):
 ######################################################################
 
 
-def Demapping_PS(QAM, de_mapping_table):
+def Demapping(QAM, de_mapping_table):
     constellation = torch.tensor(list(de_mapping_table.keys()))  # possible constellation points
     dists = torch.abs(QAM.view(-1, 1) - constellation.view(1, -1))  # distance of RX points to constellation points
     const_index = torch.argmin(dists, dim=1)  # pick the nearest constellation point
@@ -677,21 +677,20 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
     # Compute the lengths of the signals
     tx_len = tx_signal.numel()
     rx_len = rx_signal.numel()
+    end_point=rx_len-tx_len-leading_zeros
+
+    rx_signal = rx_signal[:end_point]
 
     # Calculate the cross-correlation using conv1d
     corr_result = F.conv1d(rx_signal.view(1, 1, -1), tx_signal.view(1, 1, -1)).view(-1)
 
     # Find the offset with the maximum correlation
     offset = torch.argmax(corr_result).item()
-    if offset > rx_len - tx_len + leading_zeros:
-        offset = offset - rx_len - leading_zeros
 
     # Adjust offset for leading zeros
-    offset = offset + leading_zeros
+    offset = offset + leading_zeros + 0
 
     # Check for minimum correlation
-    if corr_result[offset] < minimum_corr:
-        return -1
 
     return offset
 
