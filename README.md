@@ -10,7 +10,9 @@ The provided functions and classes can facilitate an evaluation of OFDM systems,
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
 
-Fig 1. examination of the graph reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+Fig 1. Empirical performance curve of OFDM system as measured over the air transmissions.
+
+Examination of the example in Fig1 reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
 
 ## Prerequisites
 
