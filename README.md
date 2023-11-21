@@ -63,13 +63,13 @@ Fig 2. TTI mask.
 
 A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then used for modulating the TTI, and stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
 
-### Serial to parallel
+### Serial to parallel - codewords
 
-The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into multiple sub-streams, which are then simultaneously transmitted on different orthogonal subcarriers.
+The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups defined by the modulation order. Each group is called a codeword. This is done in order to be able to map the bits in the codeword into the symbols in the following stage.
 
 ### Modulation
 
-The process of encoding the parallel data streams onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
+The process of encoding the bits onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
 
 Example of the constellation of a common QAM modulation scheme:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/QAMconstellation.png) 
