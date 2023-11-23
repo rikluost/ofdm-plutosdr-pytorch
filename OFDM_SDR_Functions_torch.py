@@ -3,8 +3,8 @@ import itertools
 import matplotlib.pyplot as plt
 import scipy
 from scipy import signal
-from scipy import interpolate
 import torch
+import torch.nn.functional as F
 import math
 
 
@@ -214,34 +214,46 @@ def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 
 ######################################################################
 
-def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
 
+
+def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, noise_power=0, plotEst=False):
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
 
     # Divide the pilots by the set pilot values
     H_estim_at_pilots = pilots / torch.tensor(pilot_symbols, dtype=torch.complex64)
 
-    # Use NumPy for interpolation (PyTorch doesn't support interpolation yet)
-    pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2).numpy().flatten()
-    H_estim_abs = scipy.interpolate.interp1d(pilot_indices, torch.abs(H_estim_at_pilots).numpy(), kind='linear', fill_value="extrapolate")(np.arange(FFT_offset, FFT_offset + F))
-    H_estim_phase = scipy.interpolate.interp1d(pilot_indices, torch.angle(H_estim_at_pilots).numpy(), kind='linear', fill_value="extrapolate")(np.arange(FFT_offset, FFT_offset + F))
-    H_estim = H_estim_abs * np.exp(1j * H_estim_phase)
+    # Interpolation indices
+    pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2, as_tuple=False).squeeze()
+
+    # Interpolation for magnitude and phase
+    all_indices = torch.arange(FFT_offset, FFT_offset + F)
+    H_estim_abs = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.abs(H_estim_at_pilots).numpy()))
+    H_estim_phase = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.angle(H_estim_at_pilots).numpy()))
+    H_estim = H_estim_abs * torch.exp(1j * H_estim_phase)
+
+    # calculate pilot power for each pilot over noise dB
+
 
     # Plotting
+    def dB(x):
+        return 10 * torch.log10(torch.abs(x))
+
     if plotEst:
-        plt.figure(0, figsize=(8,3))
-        plt.plot(pilot_indices, torch.abs(H_estim_at_pilots).numpy(), '.-', label='Pilot estimates', markersize=20)
-        plt.plot(np.arange(FFT_offset, FFT_offset + F), abs(H_estim), label='Estimated channel')
-        plt.grid(True); plt.xlabel('Subcarrier index'); plt.ylabel('$|H(f)|$'); plt.legend(fontsize=10)
-        plt.title('Estimated pilots and interpolated channel estimate')
+        plt.figure(figsize=(8, 4))
+        plt.plot(pilot_indices.numpy(), dB(H_estim_at_pilots).numpy(), 'ro-', label='Pilot estimates', markersize=8)
+        plt.plot(all_indices.numpy(), dB(torch.tensor(H_estim)).numpy(), 'b-', label='Estimated channel', linewidth=2)
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+        plt.xlabel('Subcarrier Index', fontsize=12)
+        plt.ylabel('Magnitude (dB)', fontsize=12)
+        plt.legend(loc='upper right', fontsize=10)
+        plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
         plt.savefig('pics/ChannelEstimate.png')
         plt.show()
 
-    return H_estim
+    return H_estim.numpy()
 
 ######################################################################
-
 
 def equalize_ZF(OFDM_demod, H_estim, F, S):
 
@@ -249,29 +261,28 @@ def equalize_ZF(OFDM_demod, H_estim, F, S):
     equalized = (OFDM_demod.view(S, F) / H_estim)
     return equalized
 
-
 ######################################################################
 
-
 def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
-
     # Extract payload symbols
-    out = equalized[TTI_mask_RE[:, FFT_offset:FFT_offset + F] == 1]
+    mask = TTI_mask_RE[:, FFT_offset:FFT_offset + F] == 1
+    out = equalized[mask]
 
     # Plotting the QAM symbols
     if plotQAM:
-        plt.figure(0, figsize=(8, 8))
-        plt.plot(out.real, out.imag, 'b+')
-        plt.ylim([-1.5, 1.5])
+        plt.figure(figsize=(8, 8))
+        plt.scatter(out.real, out.imag, label='QAM Symbols')
+        plt.axis('equal')
         plt.xlim([-1.5, 1.5])
-        plt.xlabel('real')
-        plt.ylabel('imaginary')
-        plt.title('Received QAM symbols')
+        plt.ylim([-1.5, 1.5])
+        plt.xlabel('Real Part', fontsize=12)
+        plt.ylabel('Imaginary Part', fontsize=12)
+        plt.title('Received QAM Constellation Diagram', fontsize=14)
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.legend(loc='upper right', fontsize=10)
         plt.savefig('pics/RXdSymbols.png')
         plt.show()
-
     return out
-
 
 ######################################################################
 
@@ -289,7 +300,7 @@ def SINR(rx_signal, n_SINR, index):
     SINR = 10 * torch.log10(rx_signal_power_0 / rx_noise_power_0)
     SINR = round(SINR.item(), 1)
 
-    return SINR
+    return SINR, rx_noise_power_0, rx_signal_power_0
 
 ######################################################################
 
@@ -362,7 +373,6 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 import torch.nn.functional as F
 def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
 
-
     # Take the absolute values of TX and RX signals
     tx_signal = torch.abs(tx_signal)
     rx_signal = torch.abs(rx_signal)
@@ -383,7 +393,6 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
     # Adjust offset for leading zeros
     offset = offset + leading_zeros + 0
 
-    # Check for minimum correlation
 
     return offset
 
@@ -392,24 +401,6 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
 #######################################################################
 
 def PSD_plot(signal, Fs, f, info='TX'):
-    '''
-    Plot the PSD of the signal
-
-    Parameters
-    ----------
-    signal : Tensor or ndarray
-        The signal (either PyTorch tensor or NumPy array)
-    Fs : int
-        Sampling frequency
-    f : int
-        Center frequency
-    info : str
-        Information string to include in the title
-
-    Returns
-    -------
-    None
-    '''
 
     # Convert PyTorch tensor to NumPy array if necessary
     if isinstance(signal, torch.Tensor):
@@ -427,29 +418,6 @@ def PSD_plot(signal, Fs, f, info='TX'):
 #######################################################################
    
 def generate_cdl_c_impulse_response(tx_signal, num_samples=1000, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False):
-    '''
-    Generate a CDL-C channel impulse response and convolve it with the transmitted signal in PyTorch
-
-    Parameters
-    ----------
-    tx_signal : Tensor
-        transmitted signal
-    num_samples : int
-        number of samples
-    sampling_rate : float
-        sampling rate
-    SINR : float
-        signal to noise ratio   
-    repeats : int
-        number of times the signal is repeated
-    random_start : bool
-        randomize the starting point of the signal
-
-    Returns
-    -------
-    Tensor
-        received signal
-    '''
 
     # CDL-C Power Delay Profile (PDP) and angles
     delays = torch.tensor([0, 31.5, 63, 94.5, 126, 157.5, 189, 220.5, 252, 283.5, 315, 346.5, 378, 409.5, 441, 472.5, 504, 536.5, 568, 600, 632, 664, 696, 728, 760, 792, 824.5, 857, 889.5, 922, 954.5, 987]) * 1e-9
