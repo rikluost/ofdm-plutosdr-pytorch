@@ -5,99 +5,48 @@ import scipy
 from scipy import signal
 from scipy import interpolate
 import torch
+import math
 
 
 ######################################################################
 
-def mapping_table(Qm, plotMap=False):
-    '''
-    Mapping table for QAM modulation in PyTorch
-
-    Parameters
-    ----------
-    Qm : int
-        Modulation order
-    plotMap : bool
-        Plot the constellation
-
-    Returns
-    -------
-    dict
-        Mapping table d_out
-        Demapping table de_out
-    '''
-
+def mapping_table(Qm, plot=False):
+        
     # Size of the constellation
     size = int(torch.sqrt(torch.tensor(2**Qm)))
-
     # The constellation
     a = torch.arange(size, dtype=torch.float32)
-
     # Shift the constellation to the center
     b = a - torch.mean(a)
-
     # Use broadcasting to create the complex constellation grid
     C = (b.unsqueeze(1) + 1j * b).flatten()
-
     # Normalize the constellation
     C /= torch.sqrt(torch.mean(torch.abs(C)**2))
-
     # Function to convert index to binary
     def index_to_binary(i, Qm):
         return tuple(map(int, '{:0{}b}'.format(int(i), Qm)))
-
+    
     # Create the mapping dictionary
-    mapping_out = {index_to_binary(i, Qm): val for i, val in enumerate(C)}
-
+    mapping = {index_to_binary(i, Qm): val for i, val in enumerate(C)}
+    
     # Create the demapping table
-    demapping_out = {v: k for k, v in mapping_out.items()}
+    demapping = {v: k for k, v in mapping.items()}
 
-    # Plotting the constellation
-    if plotMap:
-        plt.figure(figsize=(4,4))
-        plt.plot(C.real, C.imag, 'o')
-        plt.grid()
-        plt.xlabel('real')
-        plt.ylabel('imaginary')
-        plt.title(f'Constellation, modulation order {Qm}')
-        plt.savefig('pics/QAMconstellation.png')
-        plt.tight_layout()
-        plt.show()
+    if plot:
+        visualize_constellation(C, Qm)    
+    return mapping, demapping
 
-    return mapping_out, demapping_out # mapping table, demapping table
+def visualize_constellation(pts, Qm):
+    import matplotlib.pyplot as plt
+    plt.scatter(pts.numpy().real, pts.numpy().imag)
+    plt.title(f'Modulation Order {Qm} Constellation')
+    plt.ylabel('Imaginary'); plt.xlabel('Real')
+    plt.tight_layout(); plt.savefig('const.png')
 
 ######################################################################
 
 def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
-    '''
-    Create TTI resource elements mask in PyTorch
 
-    Parameters
-    ----------
-    S : int
-        Number of symbols
-    F : int
-        Number of subcarriers
-    Fp : int
-        Pilot subcarrier spacing
-    Sp : int
-        Pilot symbol
-    FFT_offset : int
-        FFT offset
-    plotTTI : bool
-        Plot TTI mask
-
-    Returns
-    -------
-    tensor
-        TTI mask
-
-    Legend:
-    0 = DRX
-    1 = PDSCH
-    2 = pilots
-    3 = DC
-    '''
     # Create a mask with all ones
     TTI_mask = torch.ones((S, F), dtype=torch.int8) # all ones
 
@@ -132,104 +81,47 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
 ######################################################################
 
 def pilot_set(TTI_mask, power=1.0):
-    ''' 
-    Create simple pilot QPSK set in PyTorch
 
-    Parameters
-    ----------
-    TTI_mask : Tensor
-        TTI mask
-    power : float
-        Power of the pilot
-
-    Returns
-    -------
-    list
-        pilot set
-    '''
     # Define QPSK pilot values
-    pilot_values = [-0.7 - 0.7j, -0.7 + 0.7j, 0.7 - 0.7j, 0.7 + 0.7j]
+    pilot_values = torch.tensor([-0.7 - 0.7j, -0.7 + 0.7j, 0.7 - 0.7j, 0.7 + 0.7j])
 
     # Count the number of pilot elements in the TTI mask
-    num_pilots = torch.count_nonzero(TTI_mask == 2).item()
+    num_pilots = TTI_mask[TTI_mask == 2].numel() 
 
     # Create a list of pilot values repeated to match the number of pilots
-    pilots = list(itertools.repeat(pilot_values, num_pilots))
-
-    # Flatten the list and apply the power scaling
-    pilots = [p * power for sublist in pilots for p in sublist][:num_pilots]
+    pilots = pilot_values.repeat(num_pilots//4+1)[:num_pilots]
 
     return pilots
 
 
 ######################################################################
 
-def create_PDSCH_data(TTI_mask, Qm, mapping_table, power=1, count=None):
-    '''
-    Create PDSCH data and symbols in PyTorch
-
-    Parameters
-    ----------
-    TTI_mask : Tensor
-        TTI mask
-    Qm : int
-        Modulation order
-    mapping_table : dict
-        Mapping table
-    power : float
-        Power scaling for symbols
-    count : int
-        Number of symbols to generate
-
-    Returns
-    -------
-    Tensor
-        PDSCH data
-    Tensor
-        PDSCH symbols
-    '''
-    # Count the number of PDSCH elements if count is not provided
-    if count is None:
-        count = torch.count_nonzero(TTI_mask == 1).item()
-
+def create_PDSCH_data(TTI_mask, Qm, mapping_table, power=1.):
+    # Count PDSCH elements
+    pdsch_elems = TTI_mask.eq(1).sum()
+    
     # Generate random bits
-    bits = torch.randint(0, 2, (count * Qm,), dtype=torch.int32)
+    bits = torch.randint(0, 2, (pdsch_elems, Qm), dtype=torch.int32)
+    
+    # Flatten and reshape bits for symbol lookup
+    flattened_bits = bits.reshape(-1, Qm)
+   
+    # Convert bits to tuples and lookup symbols
+    symbs_list = [mapping_table[tuple(row.tolist())] for row in flattened_bits]
+    symbs = torch.tensor(symbs_list, dtype=torch.complex64)
 
-    # Reshape the bits to match the modulation order
-    pdsch_bits = bits.view(-1, Qm)
-
-    # Convert the bits to symbols using the mapping table
-    pdsch_symbols = torch.tensor([mapping_table[tuple(row.tolist())] for row in pdsch_bits], dtype=torch.complex64)
-
-    # Apply power scaling to the symbols
-    pdsch_symbols = pdsch_symbols * power
-
-    return pdsch_bits, pdsch_symbols
-
-
+    # Reshape symbols back to original shape
+    symbs = symbs.view(pdsch_elems, -1)
+    symbs = symbs.flatten()
+    
+    # Apply power scaling 
+    symbs *= power
+    
+    return bits, symbs
 
 ######################################################################
 
 def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False): 
-    '''
-    OFDM TTI in frequency domain, resource elements mapping in PyTorch
-
-    Parameters
-    ----------
-    TTI_mask : Tensor
-        TTI mask
-    pilot_set : list
-        list of pilot symbols
-    pdsch_symbols : list
-        list of PDSCH symbols
-    plotTTI : bool
-        plot TTI mask
-
-    Returns
-    -------
-    Tensor
-        mapped TTI
-    '''
 
     # Create a zero tensor for the overall F subcarriers * S symbols
     TTI = torch.zeros(TTI_mask.shape, dtype=torch.complex64)
@@ -254,47 +146,13 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
 ######################################################################
 
 def FFT(TTI):
-    '''
-    OFDM TTI in time domain, FFT using PyTorch
 
-    Parameters
-    ----------
-    TTI : Tensor
-        TTI modulated symbols
-
-    Returns
-    -------
-    Tensor
-        TTI in time domain
-    '''
-    # Apply ifftshift and IFFT using PyTorch
     return torch.fft.ifft(torch.fft.ifftshift(TTI, dim=1))
 
 
 ######################################################################
 
 def CP_addition(OFDM_data, S, FFT_size, CP):
-    '''
-    OFDM TTI in time domain with cyclic prefix for each symbol using PyTorch
-
-    Parameters
-    ----------
-    OFDM_data : Tensor
-        TTI in frequency domain
-    S : int
-        number of symbols
-    FFT_size : int
-        FFT size
-    CP : int
-        cyclic prefix length
-
-    Returns 
-    -------
-    Tensor
-        TTI in time domain with cyclic prefix
-    '''
-    if OFDM_data is None:
-        OFDM_data = OFDM_data
 
     # Initialize output tensor
     out = torch.zeros((S, FFT_size + CP), dtype=torch.complex64)
@@ -309,65 +167,21 @@ def CP_addition(OFDM_data, S, FFT_size, CP):
 ######################################################################
 
 def SP(bits, length, Qm): # serial to parallel
-    '''
-    Serial to parallel conversion in PyTorch
 
-    Parameters
-    ----------
-    bits : Tensor
-        bits
-    length : int
-        length of the array
-    Qm : int
-        Modulation order
-
-    Returns
-    -------
-    Tensor
-        bits reshaped into parallel format
-    '''
     return bits.view(length, Qm)
 
 
 ######################################################################
 
-import torch
-
 def PS(bits): # parallel to serial
-    '''
-    Parallel to serial conversion in PyTorch
 
-    Parameters
-    ----------
-    bits : Tensor
-        bits
-
-    Returns
-    -------
-    Tensor
-        bits flattened into a serial format
-    '''
     return bits.view(-1)
 
 
 ######################################################################
 
 def DFT(rxsignal, plotDFT=False):
-    '''
-    Calculate the DFT of the received signal using PyTorch
 
-    Parameters
-    ----------
-    rxsignal : Tensor
-        OFDM data
-    plotDFT : bool
-        plot the DFT
-
-    Returns
-    -------
-    Tensor 
-        DFT of the received signal
-    '''
     # Calculate DFT
     OFDM_RX_DFT = torch.fft.fftshift(torch.fft.fft(rxsignal, dim=1), dim=1)
 
@@ -388,23 +202,6 @@ def DFT(rxsignal, plotDFT=False):
 import torch
 
 def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
-    '''
-    Remove the FFT offsets using PyTorch
-
-    Parameters
-    ----------
-    RX_NO_CP : Tensor
-        OFDM data without cyclic prefix
-    F : int
-        number of subcarriers
-    FFT_offset : int
-        FFT offset
-
-    Returns 
-    ------- 
-    Tensor
-        OFDM data without cyclic prefix and FFT offsets
-    '''
 
     # Calculate indices for the remaining subcarriers after removing offsets
     remaining_indices = torch.arange(FFT_offset, F + FFT_offset)
@@ -418,31 +215,6 @@ def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 ######################################################################
 
 def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
-    '''
-    Calculate the channel estimate using least squares in PyTorch
-
-    Parameters
-    ----------
-    TTI_mask_RE : Tensor
-        TTI mask
-    pilot_symbols : list
-        list of pilot symbols
-    F : int
-        number of subcarriers
-    FFT_offset : int
-        FFT offset
-    Sp : int
-        pilot symbol
-    OFDM_demod : Tensor
-        OFDM data without cyclic prefix and FFT offsets
-    plotEst : bool
-        plot the channel estimate
-
-    Returns 
-    -------
-    ndarray
-        channel estimate
-    '''
 
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
@@ -472,25 +244,7 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
 
 
 def equalize_ZF(OFDM_demod, H_estim, F, S):
-    '''
-    Equalize the OFDM data using ZF (Zero Forcing) in PyTorch
 
-    Parameters
-    ----------
-    OFDM_demod : Tensor
-        OFDM data without cyclic prefix and FFT offsets
-    H_estim : Tensor
-        channel estimate
-    F : int
-        number of subcarriers
-    S : int
-        number of symbols
-
-    Returns
-    ------- 
-    Tensor
-        Equalized OFDM data
-    '''
     # Reshape the OFDM data and perform equalization
     equalized = (OFDM_demod.view(S, F) / H_estim)
     return equalized
@@ -500,27 +254,7 @@ def equalize_ZF(OFDM_demod, H_estim, F, S):
 
 
 def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
-    '''
-    Extract all symbols with 1 in TTI mask using PyTorch
 
-    Parameters
-    ----------
-    TTI_mask_RE : Tensor   
-        TTI mask
-    equalized : Tensor
-        OFDM data without cyclic prefix and FFT offsets
-    FFT_offset : int
-        FFT offset
-    F : int
-        number of subcarriers
-    plotQAM : bool
-        plot the QAM symbols
-
-    Returns
-    -------
-    Tensor
-        payload symbols
-    '''
     # Extract payload symbols
     out = equalized[TTI_mask_RE[:, FFT_offset:FFT_offset + F] == 1]
 
@@ -542,23 +276,7 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 ######################################################################
 
 def SINR(rx_signal, n_SINR, index):
-    '''
-    SINR calculation using PyTorch
 
-    Parameters
-    ----------
-    rx_signal : Tensor
-        Received signal
-    n_SINR : int
-        Number of samples for noise estimation
-    index : int
-        Start index for signal power calculation
-
-    Returns
-    -------
-    float
-        SINR
-    '''
     # Calculate noise power
     rx_noise_0 = rx_signal[index - n_SINR:index]
     rx_noise_power_0 = torch.mean(torch.abs(rx_noise_0) ** 2)
@@ -606,27 +324,7 @@ def Demapping(QAM, de_mapping_table):
 #######################################################################
 
 def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
-    '''
-    CP removal using PyTorch
 
-    Parameters
-    ----------
-    rx_signal : Tensor
-        received signal
-    TTI_start : int
-        TTI start index
-    S : int
-        number of symbols in TTI
-    FFT_size : int
-        FFT size
-    CP : int
-        cyclic prefix length
-
-    Returns 
-    -------
-    Tensor
-        signal without CP
-    '''
     
     # Initialize a payload mask
     b_payload = torch.zeros(len(rx_signal), dtype=torch.bool)
@@ -663,25 +361,7 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 #######################################################################
 import torch.nn.functional as F
 def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
-    '''
-    Synchronization using cross-correlation in PyTorch.
 
-    Parameters:
-    ----------
-    tx_signal : Tensor
-        Transmitted signal.
-    rx_signal : Tensor
-        Received signal.
-    leading_zeros : int
-        Number of leading zeros for noise measurement.
-    minimum_corr : float
-        Minimum correlation for sync.
-
-    Returns:
-    -------
-    int
-        TTI start index or -1 if synchronization fails.
-    '''
 
     # Take the absolute values of TX and RX signals
     tx_signal = torch.abs(tx_signal)
