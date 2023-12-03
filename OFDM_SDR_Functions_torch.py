@@ -36,6 +36,8 @@ def mapping_table(Qm, plot=False):
         visualize_constellation(C, Qm)    
     return mapping, demapping
 
+######################################################################
+
 def visualize_constellation(pts, Qm):
     import matplotlib.pyplot as plt
     plt.scatter(pts.numpy().real, pts.numpy().imag)
@@ -199,8 +201,6 @@ def DFT(rxsignal, plotDFT=False):
 
 ######################################################################
 
-import torch
-
 def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 
     # Calculate indices for the remaining subcarriers after removing offsets
@@ -216,7 +216,7 @@ def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 
 
 
-def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, noise_power=0, plotEst=False):
+def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
 
@@ -226,11 +226,14 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
     # Interpolation indices
     pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2, as_tuple=False).squeeze()
 
-    # Interpolation for magnitude and phase
-    all_indices = torch.arange(FFT_offset, FFT_offset + F)
-    H_estim_abs = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.abs(H_estim_at_pilots).numpy()))
-    H_estim_phase = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.angle(H_estim_at_pilots).numpy()))
-    H_estim = H_estim_abs * torch.exp(1j * H_estim_phase)
+    # Interpolation for magnitude and phase using PyTorch's interp1d
+    all_indices = torch.arange(FFT_offset, FFT_offset + F).float()
+    
+    interp_abs = F.interp1d(pilot_indices.float(), torch.abs(H_estim_at_pilots), kind='linear', fill_value='extrapolate')(all_indices)
+    interp_phase = F.interp1d(pilot_indices.float(), torch.angle(H_estim_at_pilots), kind='linear', fill_value='extrapolate')(all_indices)
+
+    # Combine magnitude and phase
+    H_estim = interp_abs * torch.exp(1j * interp_phase)
 
     # calculate pilot power for each pilot over noise dB
 
@@ -287,7 +290,6 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 ######################################################################
 
 def SINR(rx_signal, n_SINR, index):
-
     # Calculate noise power
     rx_noise_0 = rx_signal[index - n_SINR:index]
     rx_noise_power_0 = torch.mean(torch.abs(rx_noise_0) ** 2)
@@ -298,6 +300,8 @@ def SINR(rx_signal, n_SINR, index):
 
     # Compute SINR
     SINR = 10 * torch.log10(rx_signal_power_0 / rx_noise_power_0)
+
+    # Round the SINR value
     SINR = round(SINR.item(), 1)
 
     return SINR, rx_noise_power_0, rx_signal_power_0
