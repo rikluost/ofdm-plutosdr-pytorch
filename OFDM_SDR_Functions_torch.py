@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import scipy
 from scipy import signal
 import torch
-import torch.nn.functional as F
 import math
+import torch.nn.functional as tFunc
 
 
 ######################################################################
@@ -129,9 +129,10 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
     TTI = torch.zeros(TTI_mask.shape, dtype=torch.complex64)
 
     # Allocate the payload and pilot
-    TTI[TTI_mask==1] = torch.tensor(pdsch_symbols, dtype=torch.complex64)
-    TTI[TTI_mask==2] = torch.tensor(pilot_set, dtype=torch.complex64)
-
+    #TTI[TTI_mask==1] = torch.tensor(pdsch_symbols, dtype=torch.complex64)
+    #TTI[TTI_mask==2] = torch.tensor(pilot_set, dtype=torch.complex64)
+    TTI[TTI_mask==1] = pdsch_symbols.clone().detach()
+    TTI[TTI_mask==2] = pilot_set.clone().detach()
     # Plotting the TTI modulated symbols
     if plotTTI:
         plt.figure(figsize=(8, 1.5))
@@ -216,29 +217,25 @@ def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 
 
 
-def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
+def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, noise_power=0, plotEst=False):
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
 
     # Divide the pilots by the set pilot values
-    H_estim_at_pilots = pilots / torch.tensor(pilot_symbols, dtype=torch.complex64)
+    #H_estim_at_pilots = pilots / torch.tensor(pilot_symbols, dtype=torch.complex64)
+    H_estim_at_pilots = pilots / pilot_symbols
 
     # Interpolation indices
     pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2, as_tuple=False).squeeze()
 
-    # Interpolation for magnitude and phase using PyTorch's interp1d
-    all_indices = torch.arange(FFT_offset, FFT_offset + F).float()
-    
-    interp_abs = F.interp1d(pilot_indices.float(), torch.abs(H_estim_at_pilots), kind='linear', fill_value='extrapolate')(all_indices)
-    interp_phase = F.interp1d(pilot_indices.float(), torch.angle(H_estim_at_pilots), kind='linear', fill_value='extrapolate')(all_indices)
-
-    # Combine magnitude and phase
-    H_estim = interp_abs * torch.exp(1j * interp_phase)
+    # Interpolation for magnitude and phase - works, this is not optimal, need to fix later
+    all_indices = torch.arange(FFT_offset, FFT_offset + F)
+    H_estim_abs = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.abs(H_estim_at_pilots).numpy()))
+    H_estim_phase = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.angle(H_estim_at_pilots).numpy()))
+    H_estim = H_estim_abs * torch.exp(1j * H_estim_phase)
 
     # calculate pilot power for each pilot over noise dB
 
-
-    # Plotting
     def dB(x):
         return 10 * torch.log10(torch.abs(x))
 
@@ -291,6 +288,7 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 
 def SINR(rx_signal, n_SINR, index):
     # Calculate noise power
+
     rx_noise_0 = rx_signal[index - n_SINR:index]
     rx_noise_power_0 = torch.mean(torch.abs(rx_noise_0) ** 2)
 
@@ -374,7 +372,7 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 
 
 #######################################################################
-import torch.nn.functional as F
+
 def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
 
     # Take the absolute values of TX and RX signals
@@ -389,7 +387,7 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
     rx_signal = rx_signal[:end_point]
 
     # Calculate the cross-correlation using conv1d
-    corr_result = F.conv1d(rx_signal.view(1, 1, -1), tx_signal.view(1, 1, -1)).view(-1)
+    corr_result = tFunc.conv1d(rx_signal.view(1, 1, -1), tx_signal.view(1, 1, -1)).view(-1)
 
     # Find the offset with the maximum correlation
     offset = torch.argmax(corr_result).item()
