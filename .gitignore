@@ -1,4 +1,5 @@
 models_local.py
-ofdm_dataset*
+ofdm_dataset.pth
+
 
 
