@@ -286,6 +286,22 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 
 ######################################################################
 
+def get_payload_symbols_raw(TTI_mask_RE, equalized):
+    # Extract payload symbols
+    out = equalized[TTI_mask_RE == 1]
+
+    return out
+
+
+#######################################################################
+def get_pilot_symbols_raw(TTI_mask_RE, equalized):
+    # Extract payload symbols
+    out = equalized[TTI_mask_RE == 2]
+
+    return out
+
+######################################################################
+
 def SINR(rx_signal, n_SINR, index):
     # Calculate noise power
 
@@ -453,4 +469,3 @@ def generate_cdl_c_impulse_response(tx_signal, num_samples=1000, sampling_rate=3
     return rx_signal
 
 
-    
