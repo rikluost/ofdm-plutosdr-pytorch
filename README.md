@@ -4,7 +4,7 @@
 
 This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing, and a neural netowrk-based receiver is planned in near future. This repository follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy. Please note this is work in progress.
 
-OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing or faster training of models without using an SDR radio.
+OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing and faster creation of training datasets without using an SDR radio.
 
 The provided functions and classes can facilitate an evaluation of OFDM systems, and build over the air demo set ups. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. 
 
@@ -12,7 +12,9 @@ The provided functions and classes can facilitate an evaluation of OFDM systems,
 
 Fig 1. Empirical performance curve of OFDM system as measured over the air transmissions.
 
-Examination of the example in Fig1 reveals that the current implementation achieves an approximate Bit Error Rate (BER) of 10% at a Signal-to-Interference-plus-Noise Ratio (SINR) of 21 dB. This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+Examination of the example in Fig1 reveals the current implementation approximate Bit Error Rate (BER) at a Signal-to-Interference-plus-Noise Ratio (SINR). This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+
+For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. `32-NN-receiver-training.ipynb` contains an exampl on how to build an train a NN-based receiver. However, the model is not yet functional. These are under works, and not yet documented.
 
 ## Prerequisites
 
