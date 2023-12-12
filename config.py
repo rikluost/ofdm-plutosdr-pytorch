@@ -1,4 +1,7 @@
-# Configuration for SDR and 3GPP CDL-C Channel Simulation
+import torch
+from torch.utils.data import Dataset
+
+# Configuration for SDR and 3GPP CDL-C Channel Simulation, and custom dataset
 
 # OFDM Parameters
 Qm = 6  # Modulation order
@@ -21,3 +24,27 @@ PDSCH_power = 1  # PDSCH power
 
 # Additional Parameters
 leading_zeros = 500  # Number of symbols with zero value for noise measurement at the beginning of the transmission. Used for SINR estimation.
+
+# Save the generated plots
+save_plots = False
+
+# custom dataset
+class CustomDataset(Dataset):
+    def __init__(self):
+        self.pdsch_iq = [] # pdsch symbols
+        self.pilot_iq = [] # pilot symbols
+        self.labels = [] # original bitstream labels
+        
+    def __len__(self):
+        return len(self.pdsch_iq)
+    
+    def __getitem__(self, index):
+        x1 = self.pdsch_iq[index]
+        x2 = self.pilot_iq[index] 
+        y = self.labels[index]
+        return x1, x2, y
+    
+    def add_item(self, new_pdsch_iq, new_pilot_iq, new_label):
+        self.pdsch_iq.append(new_pdsch_iq) 
+        self.pilot_iq.append(new_pilot_iq) 
+        self.labels.append(new_label) 

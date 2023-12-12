@@ -1,8 +1,8 @@
-# Over-the-Air OFDM Transmission with PlutoSDR, PyTorch implementation
+# PyOFDM-PlutoNet: Bridging OFDM and AI for Next-Gen Wireless Communication
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-PLUTO (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing, and a neural netowrk-based receiver is planned in near future. This repository follows the largerly numpy-based implementation in https://github.com/rikluost/ofdm-plutosdr-numpy. Please note this is work in progress.
+This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. Example of a training data generator is implemented, and a neural netowrk-based receiver is under works.
 
 OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing and faster creation of training datasets without using an SDR radio.
 
@@ -10,22 +10,20 @@ The provided functions and classes can facilitate an evaluation of OFDM systems,
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
 
-Fig 1. Empirical performance curve of OFDM system as measured over the air transmissions.
+Fig 1. Performance curve of OFDM system as determined with empirical over the air transmissions.
 
-Examination of the example in Fig1 reveals the current implementation approximate Bit Error Rate (BER) at a Signal-to-Interference-plus-Noise Ratio (SINR). This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+Examination of the example in Fig1 reveals the current implementation approximate Bit Error Rate (BER) at a various Signal-to-Interference-plus-Noise Ratio (SINR). This empirical data is indicative of the system's performance characteristics under the specified test conditions.
 
-For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. `32-NN-receiver-training.ipynb` contains an exampl on how to build an train a NN-based receiver. However, the model is not yet functional. These are under works, and not yet documented.
+For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. `40-training-NN-based-receiver.ipynb` contains an exampl on how to build an train a NN-based receiver. However, the model is not yet functional. These are under works, and not yet documented.
 
 ## Prerequisites
 
 Before running the example, ensure that you have the following prerequisites installed and configured:
 
-Python 3.10 or later, torch, numPy, scipy, itertools, matplotlib, libiio, torch
-PlutoSDR drivers and utilities
-
-The PlutoSDR device should also be properly connected to your computer and accessible through the network or USB interface.
+Python > 3.10, torch, numPy, matplotlib, libiio, torch, pylib-iio
 
 ## Installation
+
 ```
 git clone https://github.com/rikluost/pluto
 ```
@@ -34,7 +32,7 @@ git clone https://github.com/rikluost/pluto
 
 ```
 cd pluto
-open the jupyter notebooks, see below.
+open and run the jupyter notebooks, see below.
 ```
 
 ### notebooks
@@ -43,6 +41,8 @@ open the jupyter notebooks, see below.
 - `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values for your SDR set up
 - `10-ofdm-example-func.ipynb` end to example of how OFDM transmission and reception works
 - `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
+- `30-NN-receiver-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
+- `40-training-NN-based-receiver.ipynb` training a NN-based receiver
 
 ### libraries
 

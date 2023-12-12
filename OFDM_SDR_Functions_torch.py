@@ -1,12 +1,10 @@
 import numpy as np
-import itertools
 import matplotlib.pyplot as plt
-import scipy
-from scipy import signal
 import torch
-import math
 import torch.nn.functional as tFunc
+import config
 
+save_plots = config.save_plots
 
 ######################################################################
 
@@ -43,8 +41,10 @@ def visualize_constellation(pts, Qm):
     plt.scatter(pts.numpy().real, pts.numpy().imag)
     plt.title(f'Modulation Order {Qm} Constellation')
     plt.ylabel('Imaginary'); plt.xlabel('Real')
-    plt.tight_layout(); plt.savefig('const.png')
-
+    plt.tight_layout(); 
+    if save_plots:
+        plt.savefig(f'pics/const.png')
+    
 ######################################################################
 
 def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
@@ -73,19 +73,19 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
         plt.title('TTI mask')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
-        plt.savefig('pics/TTImask.png')
+        if save_plots:
+            plt.savefig('pics/TTImask.png')
         plt.tight_layout()
         plt.show()
 
     return TTI_mask
 
-
 ######################################################################
 
-def pilot_set(TTI_mask, power=1.0):
+def pilot_set(TTI_mask, power_scaling=1.0):
 
     # Define QPSK pilot values
-    pilot_values = torch.tensor([-0.7 - 0.7j, -0.7 + 0.7j, 0.7 - 0.7j, 0.7 + 0.7j])
+    pilot_values = torch.tensor([-0.7 - 0.7j, -0.7 + 0.7j, 0.7 - 0.7j, 0.7 + 0.7j]) * power_scaling
 
     # Count the number of pilot elements in the TTI mask
     num_pilots = TTI_mask[TTI_mask == 2].numel() 
@@ -140,7 +140,8 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
         plt.title('TTI modulated symbols')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
-        plt.savefig('pics/TTImod.png')
+        if save_plots:
+            plt.savefig('pics/TTImod.png')
         plt.show()
 
     return TTI
@@ -194,7 +195,8 @@ def DFT(rxsignal, plotDFT=False):
         plt.imshow(torch.abs(OFDM_RX_DFT).numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
         plt.xlabel('Subcarrier Index')
         plt.ylabel('Symbol')
-        plt.savefig('pics/TTI_RX.png')
+        if save_plots:
+            plt.savefig('pics/TTI_RX.png')
         plt.show()
 
     return OFDM_RX_DFT
@@ -248,7 +250,8 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
         plt.ylabel('Magnitude (dB)', fontsize=12)
         plt.legend(loc='upper right', fontsize=10)
         plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
-        plt.savefig('pics/ChannelEstimate.png')
+        if save_plots:
+            plt.savefig('pics/ChannelEstimate.png')
         plt.show()
 
     return H_estim.numpy()
@@ -280,7 +283,8 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
         plt.title('Received QAM Constellation Diagram', fontsize=14)
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.legend(loc='upper right', fontsize=10)
-        plt.savefig('pics/RXdSymbols.png')
+        if save_plots:
+            plt.savefig('pics/RXdSymbols.png')
         plt.show()
     return out
 
@@ -378,7 +382,8 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
         plt.ylabel('Amplitude')
         plt.title('Received signal and payload mask')
         plt.legend()
-        plt.savefig('pics/RXsignal_sync.png')
+        if save_plots:
+            plt.savefig('pics/RXsignal_sync.png')
         plt.show()
 
     # Remove the cyclic prefix
@@ -430,7 +435,8 @@ def PSD_plot(signal, Fs, f, info='TX'):
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('PSD [dB/Hz]')
     plt.title(f'Power Spectral Density, {info}')
-    plt.savefig(f'pics/PSD_{info}.png')
+    if save_plots:
+        plt.savefig(f'pics/PSD_{info}.png')
     plt.show()
 
 #######################################################################
