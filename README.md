@@ -42,7 +42,7 @@ open and run the jupyter notebooks, see below.
 - `10-ofdm-example-func.ipynb` end to example of how OFDM transmission and reception works
 - `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
 - `30-NN-receiver-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
-- `40-training-NN-based-receiver.ipynb` training a NN-based receiver
+- `40-training-NN-based-receiver.ipynb` training a NN-based receiver. THIS IS NOT YET FUNCTIONAL.
 
 ### libraries
 

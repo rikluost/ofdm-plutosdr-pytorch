@@ -5,9 +5,9 @@ from torch.utils.data import Dataset
 
 # OFDM Parameters
 Qm = 6  # Modulation order
-F = 400  # Number of subcarriers, including DC
+F = 72  # Number of subcarriers, including DC
 S = 14  # Number of symbols
-FFT_size = 512  # FFT size
+FFT_size = 128  # FFT size
 Fp = 3  # Pilot subcarrier spacing
 Sp = 2  # Pilot symbol, 0 for none
 CP = int(FFT_size / 10)  # Cyclic prefix

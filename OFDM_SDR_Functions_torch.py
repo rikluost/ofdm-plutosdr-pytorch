@@ -103,8 +103,8 @@ def create_PDSCH_data(TTI_mask, Qm, mapping_table, power=1.):
     pdsch_elems = TTI_mask.eq(1).sum()
     
     # Generate random bits
-    bits = torch.randint(0, 2, (pdsch_elems, Qm), dtype=torch.int32)
-    
+    bits = torch.randint(0, 2, (pdsch_elems, Qm), dtype=torch.float32)
+
     # Flatten and reshape bits for symbol lookup
     flattened_bits = bits.reshape(-1, Qm)
    
@@ -293,16 +293,18 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 def get_payload_symbols_raw(TTI_mask_RE, equalized):
     # Extract payload symbols
     out = equalized[TTI_mask_RE == 1]
+    out_orig = equalized * (TTI_mask_RE==1).int()
 
-    return out
+    return out, out_orig
 
 
 #######################################################################
 def get_pilot_symbols_raw(TTI_mask_RE, equalized):
     # Extract payload symbols
     out = equalized[TTI_mask_RE == 2]
+    out_orig = equalized * (TTI_mask_RE==2).int()
 
-    return out
+    return out, out_orig
 
 ######################################################################
 
