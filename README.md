@@ -1,38 +1,45 @@
-# PyOFDM-PlutoNet: Bridging OFDM and AI for Next-Gen Wireless Communication
+# OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device where PyTorch is used as much as possible to allow easy experimentation with AIML for PHY-processing. Example of a training data generator is implemented, and a neural netowrk-based receiver is under works.
+This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device. PyTorch is used as much as possible to allow easy experimentation with machine learning for PHY-processing. The provided functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build of over the air demo set ups. 
 
-OFDM is a popular digital modulation technique used in various wireless communication standards due to its robustness against multipath propagation and achieving high spectral efficiency. The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. 3GPP CDL-C channel model is implemented for testing and faster creation of training datasets without using an SDR radio.
-
-The provided functions and classes can facilitate an evaluation of OFDM systems, and build over the air demo set ups. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. 
+### End to end example of OFDM system 
+The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. The notebook goes through the whole OFDM process, implements a simple ZF channel estimator and LS equalizer. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. This empirical data is indicative of the system's performance characteristics under the test conditions.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
 
 Fig 1. Performance curve of OFDM system as determined with empirical over the air transmissions.
 
-Examination of the example in Fig1 reveals the current implementation approximate Bit Error Rate (BER) at a various Signal-to-Interference-plus-Noise Ratio (SINR). This empirical data is indicative of the system's performance characteristics under the specified test conditions.
+### Training data generator for ML-based receivers
+For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Simplified 3GPP CDL-C channel model is implemented for faster creation of training datasets, without using an SDR radio.
 
-For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. `40-training-NN-based-receiver.ipynb` contains an exampl on how to build an train a NN-based receiver. However, the model is not yet functional. These are under works, and not yet documented.
+### Training a ML-based receiver
+ `40-training-NN-based-receiver.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
+
+### Performance comparison of ZF & LS based receiver to the one based on NN
+
+`40-training-NN-based-receiver.ipynb`  and `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` in the works
+
+In the works
+
 
 ## Prerequisites
-
-Before running the example, ensure that you have the following prerequisites installed and configured:
 
 Python > 3.10, torch, numPy, matplotlib, libiio, torch, pylib-iio
 
 ## Installation
 
+
 ```
-git clone https://github.com/rikluost/pluto
+git clone https://github.com/rikluost/pluto # for the latest development version
 ```
 
 ## Usage
 
 ```
 cd pluto
-open and run the jupyter notebooks, see below.
+# open and run the jupyter notebooks, see below.
 ```
 
 ### notebooks
@@ -42,7 +49,9 @@ open and run the jupyter notebooks, see below.
 - `10-ofdm-example-func.ipynb` end to example of how OFDM transmission and reception works
 - `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
 - `30-NN-receiver-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
-- `40-training-NN-based-receiver.ipynb` training a NN-based receiver. THIS IS NOT YET FUNCTIONAL.
+- `40-training-NN-based-receiver.ipynb` training a NN-based receiver.
+- `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` performance comparison between simple OFDM receiver and NN based receiver over the testset- in the works
+- `50-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` performance comparison between simple OFDM receiver and NN based receiver over real radio interface using PlutoSDR - in the works
 
 ### libraries
 

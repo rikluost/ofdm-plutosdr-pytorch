@@ -291,16 +291,15 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 ######################################################################
 
 def get_payload_symbols_raw(TTI_mask_RE, equalized):
-    # Extract payload symbols
+    # Extract payload symbols in the shape of the TTI mask
     out = equalized[TTI_mask_RE == 1]
     out_orig = equalized * (TTI_mask_RE==1).int()
 
     return out, out_orig
 
-
 #######################################################################
 def get_pilot_symbols_raw(TTI_mask_RE, equalized):
-    # Extract payload symbols
+    # Extract pilot symbols in the shape of the TTI mask
     out = equalized[TTI_mask_RE == 2]
     out_orig = equalized * (TTI_mask_RE==2).int()
 
@@ -360,7 +359,6 @@ def Demapping(QAM, de_mapping_table):
 
 def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 
-    
     # Initialize a payload mask
     b_payload = torch.zeros(len(rx_signal), dtype=torch.bool)
 
@@ -418,10 +416,7 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
     # Adjust offset for leading zeros
     offset = offset + leading_zeros + 0
 
-
     return offset
-
-   
 
 #######################################################################
 
@@ -443,7 +438,8 @@ def PSD_plot(signal, Fs, f, info='TX'):
 
 #######################################################################
    
-def generate_cdl_c_impulse_response(tx_signal, num_samples=1000, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False):
+
+def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False):
 
     # CDL-C Power Delay Profile (PDP) and angles
     delays = torch.tensor([0, 31.5, 63, 94.5, 126, 157.5, 189, 220.5, 252, 283.5, 315, 346.5, 378, 409.5, 441, 472.5, 504, 536.5, 568, 600, 632, 664, 696, 728, 760, 792, 824.5, 857, 889.5, 922, 954.5, 987]) * 1e-9
@@ -452,12 +448,15 @@ def generate_cdl_c_impulse_response(tx_signal, num_samples=1000, sampling_rate=3
 
     # Normalize PDP
     pdp /= torch.sum(pdp)
-    tap_indices = torch.round(delays * sampling_rate).type(torch.int32)
-    impulse_response = torch.zeros(num_samples, dtype=torch.complex64)
-    impulse_response[tap_indices] = torch.sqrt(pdp) * torch.exp(1j * 2 * np.pi * torch.rand(len(pdp)))
-
+    tap_indices = torch.round(delays * sampling_rate).type(torch.int64)
+    
     # Convolve the transmitted signal with the impulse response
-    rx_signal = torch.conv1d(tx_signal.view(1, 1, -1), impulse_response.view(1, 1, -1)).view(-1)
+    # Zero-pad the impulse response
+    impulse_response_padded = torch.zeros(num_samples, dtype=torch.complex64)
+    impulse_response_padded[tap_indices] = torch.sqrt(pdp) * torch.exp(1j * 2 * np.pi * torch.rand(len(pdp)))
+
+    # Convolve the transmitted signal with the padded impulse response
+    rx_signal = torch.conv1d(tx_signal.view(1, 1, -1), impulse_response_padded.view(1, 1, -1),padding=(num_samples-1)).view(-1)
 
     # Function to add noise
     def add_noise(rx_signal, SINR):
