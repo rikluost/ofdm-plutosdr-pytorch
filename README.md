@@ -2,14 +2,69 @@
 
 ## Introduction
 
-This repository contains a Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device. PyTorch is used as much as possible to allow easy experimentation with machine learning for PHY-processing. The provided functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build of over the air demo set ups. 
+This project presents a comprehensive Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device. The implementation leverages the power of PyTorch, allowing for a seamless integration and experimentation with machine learning techniques for state-of-the-art Physical Layer (PHY) processing. 
+
+In addition to a traditional zero forcing (ZF) and Least Squares (LS) receiver a neural netowrk (NN) based receiver is implemented. Also supporting functionality for training data cration and testing are made available. The NN-based receiver model is trained and tested against testset, as well as over the air by utilising SDR radio. The NN-receiver follows the DeepRX (Honkala et.al., 2021) concept and architecture, but the model architecture is much simplified and lighter - with quite likely performance impact too. Nevertheless, the operational implementation demonstrates that the NN-based receiver outperforms a more traditional receiver based on least squares and zero-forcing techniques.
+
+## Table of contents
+
+<!-- TOC -->
+
+- [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
+    - [Abstract](#abstract)
+    - [Table of contents](#table-of-contents)
+    - [Introduction](#introduction)
+        - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
+        - [End to end example of OFDM system](#end-to-end-example-of-ofdm-system)
+        - [Training data generator for ML-based receivers](#training-data-generator-for-ml-based-receivers)
+        - [Training a ML-based receiver](#training-a-ml-based-receiver)
+        - [Performance comparison of ZF/LS and NN-based receivers with testset](#performance-comparison-of-zfls-and-nn-based-receivers-with-testset)
+        - [Performance comparison of ZF/LS and NN-based receivers over the air with PlutoSDR](#performance-comparison-of-zfls-and-nn-based-receivers-over-the-air-with-plutosdr)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Usage](#usage)
+        - [notebooks and other files](#notebooks-and-other-files)
+            - [notebooks](#notebooks)
+            - [Functions, configuration, models](#functions-configuration-models)
+    - [Brief intro to OFDM workflow](#brief-intro-to-ofdm-workflow)
+        - [TTI Mask Creation](#tti-mask-creation)
+        - [Data stream creation](#data-stream-creation)
+        - [Serial to parallel - codewords](#serial-to-parallel---codewords)
+        - [Modulation](#modulation)
+        - [Conversion of frequency domain symbols into time domain FFT](#conversion-of-frequency-domain-symbols-into-time-domain-fft)
+        - [CP addition](#cp-addition)
+        - [Radio Channel](#radio-channel)
+            - [Radio Channel](#radio-channel)
+            - [Transmission of IQ signals SDR](#transmission-of-iq-signals-sdr)
+            - [Reception of IQ signals SDR](#reception-of-iq-signals-sdr)
+        - [Synchronisation and CP Removal](#synchronisation-and-cp-removal)
+        - [Conversion of time domain IQ symbols into frequency domain DFT](#conversion-of-time-domain-iq-symbols-into-frequency-domain-dft)
+        - [Channel Estimation](#channel-estimation)
+        - [Equalization](#equalization)
+        - [Symbol demapping](#symbol-demapping)
+        - [Data stream recreation](#data-stream-recreation)
+        - [Bit Error Rate BER calculation](#bit-error-rate-ber-calculation)
+    - [NN-based receiver](#nn-based-receiver)
+        - [Training data generation](#training-data-generation)
+        - [Training a NN-based receiver model](#training-a-nn-based-receiver-model)
+        - [Comparing performance on testset](#comparing-performance-on-testset)
+        - [Comparing performance over the air with SDR radio](#comparing-performance-over-the-air-with-sdr-radio)
+    - [License](#license)
+    - [References](#references)
+    - [Disclaimer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
+
+<!-- /TOC -->
+
+### OFDM building blocks as python functions
+
+The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build of over the air demo set ups. 
 
 ### End to end example of OFDM system 
 The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. The notebook goes through the whole OFDM process, implements a simple ZF channel estimator and LS equalizer. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. This empirical data is indicative of the system's performance characteristics under the test conditions.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
 
-Fig 1. Performance curve of OFDM system as determined with empirical over the air transmissions.
+Fig 1. Performance curve of OFDM system as determined with empirical over the air transmissions as measured over the air with SDR radio.
 
 ### Training data generator for ML-based receivers
 For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Simplified 3GPP CDL-C channel model is implemented for faster creation of training datasets, without using an SDR radio.
@@ -17,11 +72,11 @@ For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb`
 ### Training a ML-based receiver
  `40-training-NN-based-receiver.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
 
-### Performance comparison of ZF & LS based receiver to the one based on NN
+### Performance comparison of ZF/LS and NN-based receivers with testset
 
-`40-training-NN-based-receiver.ipynb`  and `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` in the works
+In `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` the performance of trained NN-based receiver and LS/ZF receiver is compared by utilising a testset created earlier.
 
-In the works
+### Performance comparison of ZF/LS and NN-based receivers over the air with PlutoSDR
 
 
 ## Prerequisites
@@ -42,7 +97,9 @@ cd pluto
 # open and run the jupyter notebooks, see below.
 ```
 
-### notebooks
+### notebooks and other files
+
+#### notebooks
 
 - `00-setup-pluto-MacOS.ipynb` hints on how to set up plutoSdr on Mac M1
 - `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values for your SDR set up
@@ -51,16 +108,21 @@ cd pluto
 - `30-NN-receiver-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
 - `40-training-NN-based-receiver.ipynb` training a NN-based receiver.
 - `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` performance comparison between simple OFDM receiver and NN based receiver over the testset- in the works
-- `50-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` performance comparison between simple OFDM receiver and NN based receiver over real radio interface using PlutoSDR - in the works
+- `50-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` performance comparison between simple OFDM receiver and NN based receiver over real radio interface using PlutoSDR
+- `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` performance comparison between the two selected receivers with over the air connection by using PlutoSDR
 
-### libraries
+#### Functions, configuration, models
 
 - `SDR_Pluto.py` class for handling SDR functionality
 - `OFDM_SDR_Functions_torch.py` OFDM building block functions, channel simulation
-- `config.py` OFDM related configuration parameters are stored here
-- `ML_lib.py` AIML models and supporting functions, e.g. channel estimation, demodulation and equalizer can be placed here.
+- `config.py` OFDM related configuration parameters are stored here. Also the training data structure class is located here
+- `models_local.py` the NN-based receiver as pyTorch model architecture is placed here
+- `data/` folder contains the actual models and weights, training datasets and testset are store under 
+- `pics/` any graphs for this documentation are stored here
 
 ## Brief intro to OFDM workflow
+
+A detailed workflow covers TTI Mask Creation, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation, Synchronization, Channel Estimation, Equalization, Symbol Demapping, Data Stream Recreation, and Bit Error Rate (BER) Calculation.
 
 ### TTI Mask Creation
 
@@ -173,6 +235,35 @@ this entails concatenating the demapped bits from each subcarrier, converting th
 ### Bit Error Rate (BER) calculation
 
 Compare the original transmitted bit stream with the received bit stream, bit by bit and calculate BER.
+
+## NN-based receiver
+
+### Training data generation
+
+`30-NN-receiver-dataset-creator.ipynb`
+
+### Training a NN-based receiver model
+
+`40-training-NN-based-receiver.ipynb`
+
+
+![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/pics/training_ber.png) 
+
+![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/pics/training_loss.png) 
+
+
+### Comparing performance on testset
+
+`50-compare-ZF-LS-with-NN-based-RX-testset.ipynb`
+
+![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/BER_distribution_testset.png) 
+
+### Comparing performance over the air with SDR radio
+
+IN WORKS
+
+`60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb`
+
 
 ## License
 

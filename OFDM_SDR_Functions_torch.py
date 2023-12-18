@@ -218,33 +218,59 @@ def remove_fft_Offests(RX_NO_CP, F, FFT_offset):
 ######################################################################
 
 
+def torch_interp(x, xp, fp):
+    # Ensure xp and fp are sorted
+    sorted_indices = torch.argsort(xp)
+    xp = xp[sorted_indices].to(device=x.device)
+    fp = fp[sorted_indices].to(device=x.device)
 
-def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, noise_power=0, plotEst=False):
+    # Find the indices to the left and right of x
+    indices_left = torch.searchsorted(xp, x, right=True)
+    indices_left = torch.clamp(indices_left, 0, len(xp) - 1)
+
+    indices_right = torch.clamp(indices_left - 1, 0, len(xp) - 1)
+
+    # Perform linear interpolation
+    x_left, x_right = xp[indices_left], xp[indices_right]
+    f_left, f_right = fp[indices_left], fp[indices_right]
+    interp_values = f_left + (f_right - f_left) * (x - x_left) / (x_right - x_left)
+
+    return interp_values
+
+def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
 
     # Divide the pilots by the set pilot values
-    #H_estim_at_pilots = pilots / torch.tensor(pilot_symbols, dtype=torch.complex64)
     H_estim_at_pilots = pilots / pilot_symbols
 
     # Interpolation indices
     pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2, as_tuple=False).squeeze()
 
-    # Interpolation for magnitude and phase - works, this is not optimal, need to fix later
+    # Interpolation for magnitude and phase
     all_indices = torch.arange(FFT_offset, FFT_offset + F)
-    H_estim_abs = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.abs(H_estim_at_pilots).numpy()))
-    H_estim_phase = torch.from_numpy(np.interp(all_indices.numpy(), pilot_indices.numpy(), torch.angle(H_estim_at_pilots).numpy()))
-    H_estim = H_estim_abs * torch.exp(1j * H_estim_phase)
+    
+    # Linear interpolation for magnitude and phase
+    H_estim_abs = torch_interp(all_indices, pilot_indices, torch.abs(H_estim_at_pilots))
+    H_estim_phase = torch_interp(all_indices, pilot_indices, torch.angle(H_estim_at_pilots))
 
-    # calculate pilot power for each pilot over noise dB
+    # Convert magnitude and phase to complex numbers
+    # H_estim_real = H_estim_abs * torch.cos(H_estim_phase)
+    # H_estim_imag = H_estim_abs * torch.sin(H_estim_phase)
+    H_estim_real = H_estim_abs * torch.exp(1j * H_estim_phase).real
+    H_estim_imag = H_estim_abs * torch.exp(1j * H_estim_phase).imag
+
+    # Combine real and imaginary parts to form complex numbers
+    H_estim = torch.view_as_complex(torch.stack([H_estim_real, H_estim_imag], dim=-1))
+
 
     def dB(x):
         return 10 * torch.log10(torch.abs(x))
 
     if plotEst:
         plt.figure(figsize=(8, 4))
-        plt.plot(pilot_indices.numpy(), dB(H_estim_at_pilots).numpy(), 'ro-', label='Pilot estimates', markersize=8)
-        plt.plot(all_indices.numpy(), dB(torch.tensor(H_estim)).numpy(), 'b-', label='Estimated channel', linewidth=2)
+        plt.plot(pilot_indices.cpu().numpy(), dB(H_estim_at_pilots).cpu().numpy(), 'ro-', label='Pilot estimates', markersize=8)
+        plt.plot(all_indices.cpu().numpy(), dB(torch.tensor(H_estim)).cpu().numpy(), 'b-', label='Estimated channel', linewidth=2)
         plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
         plt.xlabel('Subcarrier Index', fontsize=12)
         plt.ylabel('Magnitude (dB)', fontsize=12)
@@ -254,14 +280,15 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
             plt.savefig('pics/ChannelEstimate.png')
         plt.show()
 
-    return H_estim.numpy()
+    return H_estim
+
 
 ######################################################################
 
 def equalize_ZF(OFDM_demod, H_estim, F, S):
 
     # Reshape the OFDM data and perform equalization
-    equalized = (OFDM_demod.view(S, F) / H_estim)
+    equalized = (OFDM_demod.view(S, F) / H_estim.to(device=OFDM_demod.device))
     return equalized
 
 ######################################################################
@@ -274,7 +301,7 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
     # Plotting the QAM symbols
     if plotQAM:
         plt.figure(figsize=(8, 8))
-        plt.scatter(out.real, out.imag, label='QAM Symbols')
+        plt.scatter(out.cpu().real, out.cpu().imag, label='QAM Symbols')
         plt.axis('equal')
         plt.xlim([-1.5, 1.5])
         plt.ylim([-1.5, 1.5])
@@ -330,7 +357,7 @@ def SINR(rx_signal, n_SINR, index):
 
 def Demapping(QAM, de_mapping_table):
     # Convert the demapping table keys (constellation points) to a tensor
-    constellation = torch.tensor(list(de_mapping_table.keys()))
+    constellation = torch.tensor(list(de_mapping_table.keys())).to(QAM.device)
 
     # Calculate the distance between each received QAM point and all possible constellation points
     # The shape of 'dists' will be (number of QAM points, number of constellation points)
@@ -338,19 +365,20 @@ def Demapping(QAM, de_mapping_table):
 
     # Find the index of the nearest constellation point for each QAM point
     # This index corresponds to the most likely transmitted point
-    const_index = torch.argmin(dists, dim=1)
+    const_index = torch.argmin(dists, dim=1).to(QAM.device)
 
     # Use the index to get the actual constellation points that were most likely transmitted
-    hardDecision = constellation[const_index]
+    hardDecision = constellation[const_index].to(QAM.device)
 
     # Convert the keys of the demapping table to string format
     # This is necessary because the tensor elements can't be directly used as dictionary keys
-    string_key_table = {str(key.numpy()): value for key, value in de_mapping_table.items()}
+    #string_key_table = {str(key.numpy()): value for key, value in de_mapping_table.items()}
+    string_key_table = {str(key.item()): value for key, value in de_mapping_table.items()}
 
     # Use the string keys to demap the symbols
     # The demapped symbols are the original binary representations before modulation
-    demapped_symbols = torch.tensor([string_key_table[str(c.numpy())] for c in hardDecision], dtype=torch.int32)
-
+    # demapped_symbols = torch.tensor([string_key_table[str(c.numpy())] for c in hardDecision], dtype=torch.int32)
+    demapped_symbols = torch.tensor([string_key_table[str(c.item())] for c in hardDecision], dtype=torch.int32)
     return demapped_symbols, hardDecision
 
 
