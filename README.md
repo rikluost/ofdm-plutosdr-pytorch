@@ -6,14 +6,11 @@ This project presents a comprehensive Python implementation of an Over-the-Air (
 
 In addition to a traditional zero forcing (ZF) and Least Squares (LS) receiver a neural netowrk (NN) based receiver is implemented. Also supporting functionality for training data cration and testing are made available. The NN-based receiver model is trained and tested against testset, as well as over the air by utilising SDR radio. The NN-receiver follows the DeepRX (Honkala et.al., 2021) concept and architecture, but the model architecture is much simplified and lighter - with quite likely performance impact too. Nevertheless, the operational implementation demonstrates that the NN-based receiver outperforms a more traditional receiver based on least squares and zero-forcing techniques.
 
-## Table of contents
-
 <!-- TOC -->
 
 - [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
-    - [Abstract](#abstract)
-    - [Table of contents](#table-of-contents)
     - [Introduction](#introduction)
+    - [Table of contents](#table-of-contents)
         - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
         - [End to end example of OFDM system](#end-to-end-example-of-ofdm-system)
         - [Training data generator for ML-based receivers](#training-data-generator-for-ml-based-receivers)
@@ -53,6 +50,8 @@ In addition to a traditional zero forcing (ZF) and Least Squares (LS) receiver a
     - [References](#references)
     - [Disclaimer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
 
+<!-- /TOC -->imer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
+
 <!-- /TOC -->
 
 ### OFDM building blocks as python functions
@@ -62,7 +61,7 @@ The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the bu
 ### End to end example of OFDM system 
 The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. The notebook goes through the whole OFDM process, implements a simple ZF channel estimator and LS equalizer. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example. This empirical data is indicative of the system's performance characteristics under the test conditions.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/Performance.png)
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance.png)
 
 Fig 1. Performance curve of OFDM system as determined with empirical over the air transmissions as measured over the air with SDR radio.
 
@@ -128,7 +127,7 @@ A detailed workflow covers TTI Mask Creation, Data Stream Creation, Modulation, 
 
 Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the allocating the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImask.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTImask.png) 
 
 Fig 2. TTI mask.
 
@@ -145,12 +144,12 @@ The conversion of a data stream from serial to parallel format involves dividing
 The process of encoding the bits onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
 
 Example of the constellation of a common QAM modulation scheme:
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/QAMconstellation.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/QAMconstellation.png) 
 
 Fig 3. Constellation.
 
 The TTI mask after filled with modulated symbols:
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTImod.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
 
 Fig 4. Modulated TTI.
 
@@ -181,7 +180,7 @@ $\mathbf{H}$, the radio channel matrix, can be constructed here either by transm
 
 Below shows the power spectral density of transmitted signal $\mathbf{x}$:
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_TX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_TX.png) 
 
 Fig 5. Power spectral density of the signal fed to the SDR transmitter.
 
@@ -189,14 +188,14 @@ Fig 5. Power spectral density of the signal fed to the SDR transmitter.
 
 Below shows the power spectral density of received signal $\mathbf{y}$:
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/PSD_RX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_RX.png) 
 
 Fig 6. Power spectral density of the signal received from the SDR receiver.
 
 ### Synchronisation and CP Removal
 Synchronisation is done by correlation of the transmitted signal with the received signal. The unmodulated 500 samples between the TTI's are simply to measure noise level for the SINR estimation. The earlier added CP from each received OFDM symbol is discarded before processing.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXsignal_sync.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
 
 Fig 7. Synchronisation by correlation.
 
@@ -204,7 +203,7 @@ Fig 7. Synchronisation by correlation.
 
 The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and transmitted data.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/TTI_RX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTI_RX.png) 
 
 Fig 8. Received TTI before the equalisation.
 
@@ -212,7 +211,7 @@ Fig 8. Received TTI before the equalisation.
 
 Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/ChannelEstimate.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/ChannelEstimate.png) 
 
 Fig 9. Absolute value of the received pilot symbols.
 
@@ -220,7 +219,7 @@ Fig 9. Absolute value of the received pilot symbols.
 
 Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. More advanced methods do exist.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/RXdSymbols.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXdSymbols.png) 
 
 Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
 
@@ -247,9 +246,9 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 `40-training-NN-based-receiver.ipynb`
 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/pics/training_ber.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/raining_ber.png) 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/pics/training_loss.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
 
 
 ### Comparing performance on testset
