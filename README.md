@@ -246,7 +246,7 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 `40-training-NN-based-receiver.ipynb`
 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/raining_ber.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_ber.png) 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
 
@@ -255,7 +255,7 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 
 `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb`
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-numpy/blob/main/pics/BER_distribution_testset.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
 
 ### Comparing performance over the air with SDR radio
 
