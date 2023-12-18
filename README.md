@@ -238,23 +238,31 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 
 ### Training data generation
 
+The dataset creator generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel (simplified 3GPP CDL-C). It stores the OFDM data after cyclic prefic removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
+
 `30-NN-receiver-dataset-creator.ipynb`
 
 ### Training a NN-based receiver model
 
-`40-training-NN-based-receiver.ipynb`
-
+A dataset consisting of 20,000 samples with randomised data and radio channel was used for training the model as defined in `models_local.py`. The dataset could be much larger, the training took only about 10minutes and was interrupted as the performance did not seem to improve any longer, as can be seen in Fig 10. The training process can be found in `40-training-NN-based-receiver.ipynb`. Any hyperparameters at this stage are quite likely unoptimised.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_ber.png) 
 
+Fig 10. The model performance during the training process
+
+Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
+
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
 
+Fig 11. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
 
-`50-compare-ZF-LS-with-NN-based-RX-testset.ipynb`
+Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the ZF/LS based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. The performance of the NN-based receiver on this dataset clearly outperforms the one of the LS/ZF based receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
+
+Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver
 
 ### Comparing performance over the air with SDR radio
 
