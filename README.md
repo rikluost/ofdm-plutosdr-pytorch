@@ -10,7 +10,6 @@ In addition to a traditional zero forcing (ZF) and Least Squares (LS) receiver a
 
 - [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
     - [Introduction](#introduction)
-    - [Table of contents](#table-of-contents)
         - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
         - [End to end example of OFDM system](#end-to-end-example-of-ofdm-system)
         - [Training data generator for ML-based receivers](#training-data-generator-for-ml-based-receivers)
@@ -50,7 +49,7 @@ In addition to a traditional zero forcing (ZF) and Least Squares (LS) receiver a
     - [References](#references)
     - [Disclaimer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
 
-<!-- /TOC -->imer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
+<!-- /TOC -->
 
 <!-- /TOC -->
 
@@ -149,7 +148,7 @@ Example of the constellation of a common QAM modulation scheme:
 Fig 3. Constellation.
 
 The TTI mask after filled with modulated symbols:
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTImod.png) 
 
 Fig 4. Modulated TTI.
 
