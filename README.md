@@ -8,6 +8,8 @@ In addition to a simple Least Squares (LS) channel estimator and zero forcing (Z
 
 A NN-based receiver model is trained and compared against the LS/ZF receiver. The example NN-receiver follows the DeepRX (Honkala et.al., 2021) concept, but the model architecture is much simplified and lighter. The implementation demonstrates that the NN-based receiver outperforms a more traditional receiver based on least squares and zero-forcing techniques.
 
+## Table of contents
+
 <!-- TOC -->
 
 - [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
@@ -51,7 +53,7 @@ A NN-based receiver model is trained and compared against the LS/ZF receiver. Th
 
 <!-- /TOC -->
 
-### OFDM building blocks as python functions
+## OFDM building blocks as python functions
 
 The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build demo set ups either with a true radio interface or with simulated radio channel. 
 
