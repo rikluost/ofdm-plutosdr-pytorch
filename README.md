@@ -231,7 +231,7 @@ Fig 11. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
 
-Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. The performance of the NN-based receiver on this dataset clearly outperforms the one of the LS/ZF based receiver.
+Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. The NN-based receiver on this dataset clearly outperforms the one of the LS/ZF based receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
 
