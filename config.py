@@ -1,6 +1,10 @@
 import torch
 from torch.utils.data import Dataset
 
+# running on a Mx mac?
+macos_m1 = True
+
+
 # Configuration for SDR and 3GPP CDL-C Channel Simulation, and custom dataset
 
 # OFDM Parameters
