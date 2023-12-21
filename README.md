@@ -6,7 +6,7 @@ This project presents a comprehensive Python implementation of an Over-the-Air (
 
 In addition to a simple Least Squares (LS) channel estimator and zero forcing (ZF) equalization, a neural netowrk (NN) based receiver is implemented to predict the bits from the IQ signals right after the Discreet Fourier Transformation (DFT) block. A functionality for creating training datasets, for training models, and testing different setups over radio interface or simulated radio channel are part of the project. 
 
-A NN-based receiver model is trained and compared against the LS/ZF receiver. The example NN-receiver follows the DeepRX (Honkala et.al., 2021) concept, but the model architecture is much simplified and lighter. The implementation demonstrates that the NN-based receiver outperforms a more traditional receiver based on least squares and zero-forcing techniques.
+A significant part of the project is the NN-based receiver model, trained and compared against the LS/ZF receiver. This model follows the DeepRX concept (Honkala et. al., 2021), albeit with a simplified and lighter architecture. The implementation showcases that the NN-based receiver surpasses the traditional LS and ZF-based receivers in performance.
 
 ## Table of contents
 
@@ -14,7 +14,8 @@ A NN-based receiver model is trained and compared against the LS/ZF receiver. Th
 
 - [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
     - [Introduction](#introduction)
-        - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
+    - [Table of contents](#table-of-contents)
+    - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
         - [End to end example of OFDM system](#end-to-end-example-of-ofdm-system)
         - [Training data generator for ML-based receivers](#training-data-generator-for-ml-based-receivers)
         - [Training a ML-based receiver](#training-a-ml-based-receiver)
@@ -55,10 +56,12 @@ A NN-based receiver model is trained and compared against the LS/ZF receiver. Th
 
 ## OFDM building blocks as python functions
 
-The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build demo set ups either with a true radio interface or with simulated radio channel. 
+The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build demo set ups either with a actual radio interface or with simulated radio channels. 
 
 ### End to end example of OFDM system 
-The example in `10-ofdm-example-func.ipynb` aims to demonstrate the fundamental concepts of OFDM transmission and reception using the PlutoSDR. The notebook goes through the whole OFDM process, implements a simple LS channel estimator and ZF equalizer. The performance graph depicted below, generated using the integrated libraries in conjunction with the `20-ofdm-performance-testing.ipynb` notebook, serves as an illustrative example on what can be achieved. The empirically collected data is indicative of the system's performance characteristics under the test conditions in authors radio shack.
+The 10-ofdm-example-func.ipynb notebook is designed to demonstrate the essential principles of OFDM (Orthogonal Frequency Division Multiplexing) transmission and reception using the PlutoSDR. This notebook comprehensively covers the entire OFDM process, including the implementation of a simple Least Squares (LS) channel estimator and Zero Forcing (ZF) equalizer.
+
+The performance graph included, which was created using integrated libraries in conjunction with the 20-ofdm-performance-testing.ipynb notebook, serves as an illustrative example of the system's capabilities. This graph is based on empirical data, reflecting the system's performance characteristics under specific test conditions in the authors' radio shack.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance.png)
 Fig 1. Performance curve of an OFDM system as determined with empirical over the air measurements with SDR radio.
@@ -221,7 +224,9 @@ The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates ra
 
 ### Training a NN-based receiver model
 
-To demonstrate the setup, a dataset consisting of 20,000 samples with randomised data and radio channel was used for training the model as defined in `models_local.py`. The dataset could be much larger though - the training took only about 10minutes and was interrupted as the performance did not seem to improve any longer, as can be seen in Fig 10 below. An example of the training process can be found in `40-training-NN-based-receiver.ipynb`. As this is only intented to be a demonstration of the setup, the model architecture and any hyperparameters leave room for further optimisation.
+To showcase the setup, a training dataset containing 20,000 samples, each with randomized data and radio channel characteristics, was utilized to train a model as defined in the `models_local.py` file. Although the potential exists for using a much larger dataset, the training in this instance was completed only in about 10 minutes. It was halted as there appeared to be no further improvement in performance, a detail that is evident in Fig 10 included in the documentation.
+
+The training process and its nuances are detailed in the 40-training-NN-based-receiver.ipynb notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
 Fig 10. The model performance during the training process
