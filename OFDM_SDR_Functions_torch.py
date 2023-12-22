@@ -465,42 +465,61 @@ def PSD_plot(signal, Fs, f, info='TX'):
     plt.show()
 
 #######################################################################
-   
 
-def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False):
+# This is no longer CDL-C, need to change the name
+def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False, padding=128):
+    tx_signal = torch.tensor(tx_signal, dtype=torch.complex64)
+    padded_tx_signal = torch.cat([torch.zeros(padding, dtype=torch.complex64), tx_signal, torch.zeros(padding, dtype=torch.complex64)])
 
-    # CDL-C Power Delay Profile (PDP) and angles
-    delays = torch.tensor([0, 31.5, 63, 94.5, 126, 157.5, 189, 220.5, 252, 283.5, 315, 346.5, 378, 409.5, 441, 472.5, 504, 536.5, 568, 600, 632, 664, 696, 728, 760, 792, 824.5, 857, 889.5, 922, 954.5, 987]) * 1e-9
-    powers = torch.tensor([-7.5, -23.4, -16.3, -18.9, -21, -22.8, -22.9, -27.8, -23.9, -24.9, -25.6, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7, -29.7])
-    pdp = torch.pow(10, powers / 10)
+# Repeat the signal if required
+    if repeats > 1:
+        padded_tx_signal = padded_tx_signal.repeat(repeats)
 
-    # Normalize PDP
-    pdp /= torch.sum(pdp)
-    tap_indices = torch.round(delays * sampling_rate).type(torch.int64)
-    
-    # Convolve the transmitted signal with the impulse response
-    # Zero-pad the impulse response
-    impulse_response_padded = torch.zeros(num_samples, dtype=torch.complex64)
-    impulse_response_padded[tap_indices] = torch.sqrt(pdp) * torch.exp(1j * 2 * np.pi * torch.rand(len(pdp)))
+ # Generate random tap delays, gains, and phases
+    max_delay_ns = 2000  # Maximum delay in nanoseconds
+    max_gain_db = 0      # Maximum gain in dB
+    min_gain_db = -20    # Minimum gain in dB
+    num_taps = 2        # Number of taps
 
-    # Convolve the transmitted signal with the padded impulse response
-    rx_signal = torch.conv1d(tx_signal.view(1, 1, -1), impulse_response_padded.view(1, 1, -1),padding=(num_samples-1)).view(-1)
+    tap_delays_ns = torch.rand(num_taps) * max_delay_ns  # Random delays in nanoseconds
+    tap_delays = tap_delays_ns * 1e-9                    # Convert to seconds
+    tap_gains = torch.rand(num_taps) * (max_gain_db - min_gain_db) + min_gain_db  # Random gains in dB
+    tap_phases = torch.rand(num_taps) * 2 * np.pi        # Random phases in radians
 
-    # Function to add noise
-    def add_noise(rx_signal, SINR):
-        noise = torch.randn_like(rx_signal) + 1j * torch.randn_like(rx_signal)
-        noise_power = torch.mean(torch.abs(rx_signal) ** 2) / (10 ** (SINR / 10))
-        noise *= torch.sqrt(noise_power)
-        rx_signal += noise
-        return rx_signal
 
-    # Repeat and randomize the starting point if required
-    rx_signal = rx_signal[:len(tx_signal)].repeat(repeats)
+    # Convert gains from dB to linear scale
+    tap_gains_linear = 10 ** (tap_gains / 10)
+
+    # Generate impulse response
+    impulse_response = torch.zeros(num_samples, dtype=torch.complex64)
+    for delay, gain, phase in zip(tap_delays, tap_gains_linear, tap_phases):
+        # Calculate the tap index based on delay and sampling rate
+        tap_index = int(torch.round(delay * sampling_rate))
+        if tap_index < num_samples:
+            impulse_response[tap_index] += gain * torch.exp(1j * phase)
+
+    # Convolve the TX signal with the impulse response
+    convolved_signal = torch.conv1d(padded_tx_signal.view(1, 1, -1), impulse_response.view(1, 1, -1)).view(-1)
+
+    # Add noise based on SINR
+    signal_power = torch.mean(torch.abs(convolved_signal)**2)
+    noise_power = signal_power / (10 ** (SINR / 10))
+    noise = torch.sqrt(torch.tensor(noise_power / 2)) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
+    rx_signal = convolved_signal + noise
+
+    # Add random start if required
     if random_start:
-        rx_signal = torch.roll(rx_signal, torch.randint(0, len(tx_signal), (1,)).item())
-
-    rx_signal = add_noise(rx_signal, SINR)
+        start_index = torch.randint(0, len(rx_signal), (1,)).item()
+        rx_signal = torch.roll(rx_signal, shifts=start_index)
 
     return rx_signal
+
+
+
+
+
+
+
+
 
 

@@ -67,7 +67,7 @@ The performance graph included, which was created using integrated libraries in 
 Fig 1. Performance curve of an OFDM system as determined with empirical over the air measurements with SDR radio.
 
 ### Training data generator for ML-based receivers
-For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Simplified 3GPP CDL-C channel model is implemented for faster creation of training datasets, without using an SDR radio.
+For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Randmonized radio channel model is implemented for faster creation of training datasets, without using an SDR radio.
 
 ### Training a ML-based receiver
  `40-training-NN-based-receiver.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
@@ -161,7 +161,7 @@ where:
 - $\mathbf{x}$ is the transmitted signal vector
 - $\mathbf{n}$ is the noise vector
 
-$\mathbf{H}$, the radio channel matrix, can be constructed here either by transmitting the signal $\mathbf{x}$ with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified 3GPP CDL-C radio channel model. Noise, in case of SDR is naturally injected into the signal, while in case of using CDL-C, it is added separately.
+$\mathbf{H}$, the radio channel matrix, can be constructed here either by transmitting the signal $\mathbf{x}$ with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified randomized radio channel model. Noise, in case of SDR is naturally injected into the signal, while in case of using simulated model, it is added separately.
 
 #### Transmission of IQ signals (SDR)
 
@@ -220,7 +220,7 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 
 ### Training data generation
 
-The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel (simplified 3GPP CDL-C here). It stores the OFDM data after reception, cyclic prefic removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
+The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel. It stores the OFDM data after reception, cyclic prefic removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
 
 ### Training a NN-based receiver model
 
@@ -249,6 +249,8 @@ Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based rec
 IN WORKS
 
 `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb`
+
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance_LS_nn.png) 
 
 
 ## License

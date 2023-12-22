@@ -1,20 +1,15 @@
 import torch
 from torch.utils.data import Dataset
 
-# running on a Mx mac?
-macos_m1 = True
-
-
-# Configuration for SDR and 3GPP CDL-C Channel Simulation, and custom dataset
 
 # OFDM Parameters
-Qm = 6  # Modulation order
+Qm = 4  # Modulation order
 F = 72  # Number of subcarriers, including DC
 S = 14  # Number of symbols
 FFT_size = 128  # FFT size
 Fp = 3  # Pilot subcarrier spacing
 Sp = 2  # Pilot symbol, 0 for none
-CP = int(FFT_size / 10)  # Cyclic prefix
+CP = int(FFT_size / 7)  # Cyclic prefix
 SCS = 15000  # Subcarrier spacing
 P = F // Fp  # Number of pilot subcarriers
 sn = 0  # Serial number starting value
