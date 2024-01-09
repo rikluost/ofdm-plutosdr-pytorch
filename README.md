@@ -238,17 +238,15 @@ Fig 11. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
 
-Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. The NN-based receiver on this dataset clearly outperforms the one of the LS/ZF based receiver.
+Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
 
-Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver
+Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver - PLACE HOLDER, INCORRECT GRAPH
 
 ### Comparing performance over the air with SDR radio
 
-IN WORKS
-
-`60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb`
+In the notebook `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb`, random data is transmitted multiple times (e.g., 1000 times) over a radio interface by utilising the SDR transmitter and receiver. Post synchronization, cyclic prefix removal, and discrete Fourier transform, the data is processed by both Zero Forcing/Least Squares (ZF/LS) and Neural Network (NN) based receivers. The Bit Error Rate (BER) is then calculated and compared for each type of receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance_LS_nn.png) 
 
