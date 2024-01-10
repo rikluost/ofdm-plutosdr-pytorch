@@ -117,16 +117,16 @@ The following workflow covers TTI Mask Creation, Data Stream Creation, Modulatio
 
 ### TTI Mask Creation
 
-Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data.
+Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, only one pilot symbol is possible.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTImask.png) 
 Fig 2. TTI mask.
 
 ### Data stream creation
 
-A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is then in the following stagtes used for modulating the TTI, and it is also stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
+A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is in the following stes used for modulating the TTI, and the data is also stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
 
-### Serial to parallel - codewords
+### Serial to parallel - Codewords
 
 The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups (codewords) defined by the modulation order. 
 
@@ -178,21 +178,23 @@ The signal can be received by the SDR receiver, which translates it to time doma
 Fig 6. Power spectral density of the signal received from the SDR receiver.
 
 ### Synchronisation and CP Removal
-Synchronisation is done by correlation of the transmitted signal with the received signal. The unmodulated samples between the TTI's are there simply to allow measuring noise level for the SINR estimation. The earlier added CP from each received OFDM symbol is discarded before processing.
+PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
 Fig 7. Synchronisation by correlation.
 
+Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
+
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 
-The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and transmitted data.
+The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and eventually the transmitted data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTI_RX.png) 
 Fig 8. Received TTI before the equalisation.
 
 ### Channel Estimation
 
-Channel estimation involves determining the properties of the transmission channel to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix.
+Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/ChannelEstimate.png) 
 Fig 9. Absolute value of the received pilot symbols.
