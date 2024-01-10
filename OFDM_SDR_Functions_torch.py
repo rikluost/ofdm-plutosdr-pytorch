@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as tFunc
 import config
+import os
 
 save_plots = config.save_plots
 
@@ -470,7 +471,6 @@ def PSD_plot(signal, Fs, f, info='TX'):
 
 #######################################################################
 
-# This is no longer CDL-C, need to change the name
 def random_channel(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False, padding=1000):
     #tx_signal = torch.tensor(tx_signal, dtype=torch.complex64)
     padded_tx_signal = torch.cat([torch.zeros(padding, dtype=torch.complex64), tx_signal, torch.zeros(padding, dtype=torch.complex64)])
@@ -518,8 +518,17 @@ def random_channel(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, re
 
     return rx_signal
 
+#######################################################################
 
-
+# Function to check if file exists and return a new filename
+def get_new_filename(directory, base_filename):
+    os.makedirs(directory, exist_ok=True)
+    nn = 1
+    while True:
+        new_filename = f"{base_filename}_{nn}.csv"
+        if not os.path.exists(os.path.join(directory, new_filename)):
+            return new_filename
+        nn += 1
 
 
 

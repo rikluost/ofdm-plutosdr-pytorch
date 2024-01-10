@@ -107,9 +107,9 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 - `SDR_Pluto.py` class for handling SDR functionality
 - `OFDM_SDR_Functions_torch.py` OFDM building block functions, channel simulation
 - `config.py` OFDM related configuration parameters are stored here. Also the training data structure class is located here
-- `models_local.py` the NN-based receiver as pyTorch model architecture is placed here
-- `data/` folder contains the actual models and weights, training datasets and testset are store under 
-- `pics/` any graphs for this documentation are stored here
+- `models_local.py` the NN-based receiver as pyTorch model architecture 
+- `data/` folder contains the actual models and weights, training datasets and testset
+- `pics/` any graphs for this documentation 
 
 ## Brief intro to OFDM workflow
 
@@ -244,7 +244,7 @@ Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and i
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset_log_scale.png) 
 
-Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver - PLACE HOLDER, INCORRECT GRAPH
+Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
 
 ### Comparing performance over the air with SDR radio
 
