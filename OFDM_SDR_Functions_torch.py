@@ -237,6 +237,8 @@ def torch_interp(x, xp, fp):
 
     return interp_values
 
+######################################################################
+
 def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod, plotEst=False):
     # Pilot extraction
     pilots = OFDM_demod[TTI_mask_RE == 2]
@@ -422,7 +424,9 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 
 #######################################################################
 
-def sync_TTI(tx_signal, rx_signal, leading_zeros, minimum_corr=0.3):
+def sync_TTI(tx_signal, rx_signal, leading_zeros):
+
+    # time sync using correlation
 
     # Take the absolute values of TX and RX signals
     tx_signal = torch.abs(tx_signal)
@@ -467,8 +471,8 @@ def PSD_plot(signal, Fs, f, info='TX'):
 #######################################################################
 
 # This is no longer CDL-C, need to change the name
-def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False, padding=128):
-    tx_signal = torch.tensor(tx_signal, dtype=torch.complex64)
+def random_channel(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False, padding=1000):
+    #tx_signal = torch.tensor(tx_signal, dtype=torch.complex64)
     padded_tx_signal = torch.cat([torch.zeros(padding, dtype=torch.complex64), tx_signal, torch.zeros(padding, dtype=torch.complex64)])
 
 # Repeat the signal if required
@@ -478,8 +482,8 @@ def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.
  # Generate random tap delays, gains, and phases
     max_delay_ns = 2000  # Maximum delay in nanoseconds
     max_gain_db = 0      # Maximum gain in dB
-    min_gain_db = -20    # Minimum gain in dB
-    num_taps = 2        # Number of taps
+    min_gain_db = -12    # Minimum gain in dB
+    num_taps = 3        # Number of taps
 
     tap_delays_ns = torch.rand(num_taps) * max_delay_ns  # Random delays in nanoseconds
     tap_delays = tap_delays_ns * 1e-9                    # Convert to seconds
@@ -504,7 +508,7 @@ def generate_cdl_c_impulse_response(tx_signal, num_samples=16, sampling_rate=30.
     # Add noise based on SINR
     signal_power = torch.mean(torch.abs(convolved_signal)**2)
     noise_power = signal_power / (10 ** (SINR / 10))
-    noise = torch.sqrt(torch.tensor(noise_power / 2)) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
+    noise = torch.sqrt(noise_power / 2) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
     rx_signal = convolved_signal + noise
 
     # Add random start if required

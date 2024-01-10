@@ -2,27 +2,25 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as tFunc
+from config import *
 
 class ResidualBlock(nn.Module):
     def __init__(self):
         super(ResidualBlock, self).__init__()
 
-        # Layer normalization is done over the last three dimensions: time, frequency, conv 'channels'
-        self.layer_norm_1 = nn.LayerNorm(normalized_shape=(128, 14, 71))
-        self.conv_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
-        #torch.nn.init.xavier_uniform(self.conv_1.weight)
+        self.layer_norm_1 = nn.LayerNorm(normalized_shape=( S,F-1))
+        self.conv2d_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
 
-        # Layer normalization is done over the last three dimensions: time, frequency, conv 'channels'
-        self.layer_norm_2 = nn.LayerNorm(normalized_shape=(128, 14, 71))
-        self.conv_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
+        self.layer_norm_2 = nn.LayerNorm(normalized_shape=(S,F-1))
+        self.conv2d_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
 
     def forward(self, inputs):
         z = self.layer_norm_1(inputs)
         z = tFunc.relu(z)
-        z = self.conv_1(z)
+        z = self.conv2d_1(z)
         z = self.layer_norm_2(z)
         z = tFunc.relu(z)
-        z = self.conv_2(z)
+        z = self.conv2d_2(z)
         
         # Skip connection
         z = z + inputs
@@ -32,13 +30,13 @@ class ResidualBlock(nn.Module):
 
 ###################### Simple DeepRX-type Neural Network Receiver, PyTorch model #############################
 
-class RXModel(nn.Module):
+class RXModel_2(nn.Module):
 
     def __init__(self, num_bits_per_symbol):
-        super(RXModel, self).__init__()
+        super(RXModel_2, self).__init__()
 
         # Input convolution
-        self.input_conv = nn.Conv2d(in_channels=4, out_channels=128, kernel_size=(3, 3), padding=(1, 1), bias=False)
+        self.input_conv2d = nn.Conv2d(in_channels=2, out_channels=128, kernel_size=(3, 3), padding=(1, 1), bias=False)
 
         # Residual blocks
         self.res_block_1 = ResidualBlock()
@@ -48,16 +46,15 @@ class RXModel(nn.Module):
         self.res_block_5 = ResidualBlock()
 
         # Output conv
-        self.output_conv = nn.Conv2d(in_channels=128, out_channels=num_bits_per_symbol, kernel_size=(3, 3), padding=(1, 1), bias=False)
+        self.output_conv2d = nn.Conv2d(in_channels=128, out_channels=num_bits_per_symbol, kernel_size=(3, 3), padding=(1, 1), bias=False)
 
     def forward(self, inputs):
-        y, pilots = inputs
+        y = inputs
    
         # Stack the tensors along a new dimension (axis 0)
-        z = torch.stack([y.real, y.imag, pilots.real, pilots.imag], dim=0)
+        z = torch.stack([y.real, y.imag], dim=0)
         z = z.permute(1, 0, 2, 3)
-        # Input conv
-        z = self.input_conv(z)
+        z = self.input_conv2d(z)
 
         # Residual blocks
         z = self.res_block_1(z)
@@ -65,9 +62,9 @@ class RXModel(nn.Module):
         z = self.res_block_3(z)
         z = self.res_block_4(z)
         z = self.res_block_5(z)
-        z = self.output_conv(z)
+        z = self.output_conv2d(z)
 
-        # Reshape the input to fit what the resource grid demapper is expected
+        # Reshape 
         z = z.permute(0,2, 3, 1)
         z = nn.Sigmoid()(z)
 

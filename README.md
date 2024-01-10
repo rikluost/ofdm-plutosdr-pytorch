@@ -6,7 +6,7 @@ This project presents a comprehensive Python implementation of an Over-the-Air (
 
 In addition to a simple Least Squares (LS) channel estimator and zero forcing (ZF) equalization, a neural netowrk (NN) based receiver is implemented to predict the bits from the IQ signals right after the Discreet Fourier Transformation (DFT) block. A functionality for creating training datasets, for training models, and testing different setups over radio interface or simulated radio channel are part of the project. 
 
-A significant part of the project is the NN-based receiver model, trained and compared against the LS/ZF receiver. This model follows the DeepRX concept (Honkala et. al., 2021), albeit with a simplified and lighter architecture. The implementation showcases that the NN-based receiver surpasses the traditional LS and ZF-based receivers in performance.
+A part of the project is an NN-based receiver model, trained and compared against the LS/ZF receiver. The training is done using simulated radio channels, and testing is done over the air. This receiver model follows the DeepRX concept (Honkala et. al., 2021), albeit with a simplified and lighter architecture. The implementation showcases that the NN-based receiver can surpass the traditional LS and ZF-based receivers in performance.
 
 ## Table of contents
 

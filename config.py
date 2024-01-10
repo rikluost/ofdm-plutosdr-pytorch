@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 
 
 # OFDM Parameters
-Qm = 4  # Modulation order
+Qm = 4  # bits per symbol
 F = 72  # Number of subcarriers, including DC
 S = 14  # Number of symbols
 FFT_size = 128  # FFT size
@@ -12,8 +12,6 @@ Sp = 2  # Pilot symbol, 0 for none
 CP = int(FFT_size / 7)  # Cyclic prefix
 SCS = 15000  # Subcarrier spacing
 P = F // Fp  # Number of pilot subcarriers
-sn = 0  # Serial number starting value
-Qm_sn = 2  # Serial number modulation order
 FFT_offset = int((FFT_size - F) / 2)  # FFT offset
 SampleRate = FFT_size * SCS  # Sample rate
 Ts = 1 / (SCS * FFT_size)  # Sample duration
@@ -31,7 +29,7 @@ save_plots = False
 class CustomDataset(Dataset):
     def __init__(self):
         self.pdsch_iq = [] # pdsch symbols
-        self.pilot_iq = [] # pilot symbols
+        #self.pilot_iq = [] # pilot symbols
         self.labels = [] # original bitstream labels
         
     def __len__(self):
@@ -39,11 +37,12 @@ class CustomDataset(Dataset):
     
     def __getitem__(self, index):
         x1 = self.pdsch_iq[index]
-        x2 = self.pilot_iq[index] 
+        #x2 = self.pilot_iq[index] 
         y = self.labels[index]
-        return x1, x2, y
+        return x1, y
     
-    def add_item(self, new_pdsch_iq, new_pilot_iq, new_label):
+    #def add_item(self, new_pdsch_iq, new_pilot_iq, new_label):
+    def add_item(self, new_pdsch_iq,  new_label):
         self.pdsch_iq.append(new_pdsch_iq) 
-        self.pilot_iq.append(new_pilot_iq) 
+        #self.pilot_iq.append(new_pilot_iq) 
         self.labels.append(new_label) 

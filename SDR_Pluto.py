@@ -182,8 +182,7 @@ class SDR:
         self.SDR_gain_set(tx_gain=-80, rx_gain=SDR_RX_GAIN)
         time.sleep(0.3)  # Wait for settings to take effect
         noise_sample = self.SDR_RX_receive(10000, normalize=False)
-        noise_power = torch.mean(torch.abs(torch.tensor(noise_sample, dtype=torch.complex64))**2)
-
+        noise_power = torch.mean(torch.abs(noise_sample)**2)
         # Prepare to record SINR and TX gain values
         SINR = []
         TX_GAIN_t = []
@@ -197,7 +196,7 @@ class SDR:
 
             # Measure the signal power and calculate SINR
             sample = self.SDR_RX_receive(10000, normalize=False)
-            signal_power = torch.mean(torch.abs(torch.tensor(sample, dtype=torch.complex64))**2)
+            signal_power = torch.mean(torch.abs(sample)**2)
             SINR.append(10 * torch.log10(signal_power / noise_power).item())
 
             # Stop if the maximum desired SINR is reached
