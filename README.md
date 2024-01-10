@@ -29,7 +29,7 @@ A part of the project is an NN-based receiver model, trained and compared agains
     - [Brief intro to OFDM workflow](#brief-intro-to-ofdm-workflow)
         - [TTI Mask Creation](#tti-mask-creation)
         - [Data stream creation](#data-stream-creation)
-        - [Serial to parallel - codewords](#serial-to-parallel---codewords)
+        - [Serial to parallel - Codewords](#serial-to-parallel---codewords)
         - [Modulation](#modulation)
         - [Conversion of frequency domain symbols into time domain FFT](#conversion-of-frequency-domain-symbols-into-time-domain-fft)
         - [CP addition](#cp-addition)
@@ -242,7 +242,7 @@ Fig 11. Bit Error Rate (BER) during the training process
 
 Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12. 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset_log_scale.png) 
 
 Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver - PLACE HOLDER, INCORRECT GRAPH
 
