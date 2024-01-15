@@ -181,14 +181,14 @@ Fig 6. Power spectral density of the signal received from the SDR receiver.
 PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/corr.png) 
-Fig 7. Synchronisation by correlation. ABS of symbols from 10 before to 40 after the detected start of the signal.
+Fig 7. Synchronisation by correlation. ABS of symbols from 10 before to 50 after the detected start of the signal.
 
 ### CP Removal
 
 Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
-Fig 7. CP Removal
+Fig 8. CP Removal
 
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
@@ -196,21 +196,21 @@ Fig 7. CP Removal
 The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and eventually the transmitted data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTI_RX.png) 
-Fig 8. Received TTI before the equalisation.
+Fig 9. Received TTI before the equalisation.
 
 ### Channel Estimation
 
 Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/ChannelEstimate.png) 
-Fig 9. Absolute value of the received pilot symbols.
+Fig 10. Absolute value of the received pilot symbols.
 
 ### Equalization
 
 Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXdSymbols.png) 
-Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
+Fig 11. Received symbols of the PDCCH symbols of one TTI after signal equalization.
 
 ### Symbol demapping
 
@@ -237,12 +237,12 @@ To showcase the setup, a training dataset containing 20,000 samples, each with r
 The training process and its nuances are detailed in the 40-training-NN-based-receiver.ipynb notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
-Fig 10. The model performance during the training process
+Fig 12. The model performance during the training process
 
 Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_ber.png) 
-Fig 11. Bit Error Rate (BER) during the training process
+Fig 13. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
 
@@ -250,14 +250,14 @@ Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and i
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset_log_scale.png) 
 
-Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
+Fig 14. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
 
 ### Comparing performance over the air with SDR radio
 
 In the notebook `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb`, random data is transmitted multiple times (e.g., 1000 times) over a radio interface by utilising the SDR transmitter and receiver. Post synchronization, cyclic prefix removal, and discrete Fourier transform, the data is processed by both Zero Forcing/Least Squares (ZF/LS) and Neural Network (NN) based receivers. The Bit Error Rate (BER) is then calculated and compared for each type of receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance_LS_nn.png) 
-
+Fig 15. Performance comparison between the NN-based and classic receivers over real-life radio interface
 
 ## License
 
