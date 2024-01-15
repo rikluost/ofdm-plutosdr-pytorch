@@ -177,13 +177,19 @@ The signal can be received by the SDR receiver, which translates it to time doma
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_RX.png) 
 Fig 6. Power spectral density of the signal received from the SDR receiver.
 
-### Synchronisation and CP Removal
+### Synchronisation
 PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
-Fig 7. Synchronisation by correlation.
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/corr.png) 
+Fig 7. Synchronisation by correlation. ABS of symbols from 10 before to 40 after the detected start of the signal.
+
+### CP Removal
 
 Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
+
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
+Fig 7. CP Removal
+
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 

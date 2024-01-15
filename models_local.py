@@ -9,10 +9,10 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
 
         self.layer_norm_1 = nn.LayerNorm(normalized_shape=( S,F-1))
-        self.conv2d_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
+        self.conv2d_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding='same', bias=False)
 
         self.layer_norm_2 = nn.LayerNorm(normalized_shape=(S,F-1))
-        self.conv2d_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=(1, 1))
+        self.conv2d_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding='same', bias=False)
 
     def forward(self, inputs):
         z = self.layer_norm_1(inputs)
@@ -36,7 +36,7 @@ class RXModel_2(nn.Module):
         super(RXModel_2, self).__init__()
 
         # Input convolution
-        self.input_conv2d = nn.Conv2d(in_channels=2, out_channels=128, kernel_size=(3, 3), padding=(1, 1), bias=False)
+        self.input_conv2d = nn.Conv2d(in_channels=2, out_channels=128, kernel_size=(3, 3), padding='same')
 
         # Residual blocks
         self.res_block_1 = ResidualBlock()
@@ -46,7 +46,7 @@ class RXModel_2(nn.Module):
         self.res_block_5 = ResidualBlock()
 
         # Output conv
-        self.output_conv2d = nn.Conv2d(in_channels=128, out_channels=num_bits_per_symbol, kernel_size=(3, 3), padding=(1, 1), bias=False)
+        self.output_conv2d = nn.Conv2d(in_channels=128, out_channels=num_bits_per_symbol, kernel_size=(3, 3), padding='same')
 
     def forward(self, inputs):
         y = inputs

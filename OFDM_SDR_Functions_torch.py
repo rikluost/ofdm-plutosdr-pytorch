@@ -130,8 +130,6 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
     TTI = torch.zeros(TTI_mask.shape, dtype=torch.complex64)
 
     # Allocate the payload and pilot
-    #TTI[TTI_mask==1] = torch.tensor(pdsch_symbols, dtype=torch.complex64)
-    #TTI[TTI_mask==2] = torch.tensor(pilot_set, dtype=torch.complex64)
     TTI[TTI_mask==1] = pdsch_symbols.clone().detach()
     TTI[TTI_mask==2] = pilot_set.clone().detach()
     # Plotting the TTI modulated symbols
@@ -172,14 +170,12 @@ def CP_addition(OFDM_data, S, FFT_size, CP):
 ######################################################################
 
 def SP(bits, length, Qm): # serial to parallel
-
     return bits.view(length, Qm)
 
 
 ######################################################################
 
 def PS(bits): # parallel to serial
-
     return bits.view(-1)
 
 
@@ -258,8 +254,6 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
     H_estim_phase = torch_interp(all_indices, pilot_indices, torch.angle(H_estim_at_pilots))
 
     # Convert magnitude and phase to complex numbers
-    # H_estim_real = H_estim_abs * torch.cos(H_estim_phase)
-    # H_estim_imag = H_estim_abs * torch.sin(H_estim_phase)
     H_estim_real = H_estim_abs * torch.exp(1j * H_estim_phase).real
     H_estim_imag = H_estim_abs * torch.exp(1j * H_estim_phase).imag
 
@@ -337,10 +331,10 @@ def get_pilot_symbols_raw(TTI_mask_RE, equalized):
 
 ######################################################################
 
-def SINR(rx_signal, n_SINR, index):
+def SINR(rx_signal, index, leading_zeros):
     # Calculate noise power
 
-    rx_noise_0 = rx_signal[index - n_SINR:index]
+    rx_noise_0 = rx_signal[index - leading_zeros + 20 : index - 20]
     rx_noise_power_0 = torch.mean(torch.abs(rx_noise_0) ** 2)
 
     # Calculate signal power
@@ -361,29 +355,12 @@ def SINR(rx_signal, n_SINR, index):
 def Demapping(QAM, de_mapping_table):
     # Convert the demapping table keys (constellation points) to a tensor
     constellation = torch.tensor(list(de_mapping_table.keys())).to(QAM.device)
-
-    # Calculate the distance between each received QAM point and all possible constellation points
-    # The shape of 'dists' will be (number of QAM points, number of constellation points)
     dists = torch.abs(QAM.view(-1, 1) - constellation.view(1, -1))
-
-    # Find the index of the nearest constellation point for each QAM point
-    # This index corresponds to the most likely transmitted point
     const_index = torch.argmin(dists, dim=1).to(QAM.device)
-
-    # Use the index to get the actual constellation points that were most likely transmitted
     hardDecision = constellation[const_index].to(QAM.device)
-
-    # Convert the keys of the demapping table to string format
-    # This is necessary because the tensor elements can't be directly used as dictionary keys
-    #string_key_table = {str(key.numpy()): value for key, value in de_mapping_table.items()}
     string_key_table = {str(key.item()): value for key, value in de_mapping_table.items()}
-
-    # Use the string keys to demap the symbols
-    # The demapped symbols are the original binary representations before modulation
-    # demapped_symbols = torch.tensor([string_key_table[str(c.numpy())] for c in hardDecision], dtype=torch.int32)
     demapped_symbols = torch.tensor([string_key_table[str(c.item())] for c in hardDecision], dtype=torch.int32)
     return demapped_symbols, hardDecision
-
 
 
 #######################################################################
@@ -425,31 +402,42 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
 
 #######################################################################
 
-def sync_TTI(tx_signal, rx_signal, leading_zeros):
+def sync_TTI(tx_signal, rx_signal, leading_zeros, threshold=6, plot=False):
 
     # time sync using correlation
 
-    # Take the absolute values of TX and RX signals
-    tx_signal = torch.abs(tx_signal)
-    rx_signal = torch.abs(rx_signal)
-
-    # Compute the lengths of the signals
     tx_len = tx_signal.numel()
     rx_len = rx_signal.numel()
-    end_point=rx_len-tx_len-leading_zeros
+    end_point=rx_len-tx_len
 
-    rx_signal = rx_signal[:end_point]
+    rx_signal = rx_signal[leading_zeros:end_point]
 
     # Calculate the cross-correlation using conv1d
-    corr_result = tFunc.conv1d(rx_signal.view(1, 1, -1), tx_signal.view(1, 1, -1)).view(-1)
+    corr_result_real = tFunc.conv1d(rx_signal.real.view(1, 1, -1), tx_signal.real.view(1, 1, -1)).view(-1)
+    corr_result_imag = tFunc.conv1d(rx_signal.imag.view(1, 1, -1), tx_signal.imag.view(1, 1, -1)).view(-1)
+    correlation =  torch.complex(corr_result_real, corr_result_imag)
+    correlation = correlation.abs()
+    threshold = correlation.mean()*threshold
 
-    # Find the offset with the maximum correlation
-    offset = torch.argmax(corr_result).item()
+    # Find the first peak that exceeds the threshold
+    for i, value in enumerate(correlation):
+        if value > threshold:
+            if plot:
+                plt.figure(figsize=(8, 4))
+                plt.plot(correlation.abs()[i-10:i+50])
+                plt.grid()
+                plt.xlabel("Samples from selected index")
+                plt.ylabel("Complex conjugate correlation")
+                plt.axvline(x=10, color = 'r', linewidth=3)
+                if save_plots:
+                    plt.savefig('pics/corr.png')
+                plt.show()
 
-    # Adjust offset for leading zeros
-    offset = offset + leading_zeros + 0
+            return i + leading_zeros
+        
+    i = torch.argmax(correlation).item() + leading_zeros
 
-    return offset
+    return i
 
 #######################################################################
 
@@ -469,70 +457,61 @@ def PSD_plot(signal, Fs, f, info='TX'):
         plt.savefig(f'pics/PSD_{info}.png')
     plt.show()
 
-#######################################################################
-
-def random_channel(tx_signal, num_samples=16, sampling_rate=30.72e6, SINR=20, repeats=1, random_start=False, padding=1000):
-    #tx_signal = torch.tensor(tx_signal, dtype=torch.complex64)
-    padded_tx_signal = torch.cat([torch.zeros(padding, dtype=torch.complex64), tx_signal, torch.zeros(padding, dtype=torch.complex64)])
-
-# Repeat the signal if required
-    if repeats > 1:
-        padded_tx_signal = padded_tx_signal.repeat(repeats)
-
- # Generate random tap delays, gains, and phases
-    max_delay_ns = 2000  # Maximum delay in nanoseconds
-    max_gain_db = 0      # Maximum gain in dB
-    min_gain_db = -12    # Minimum gain in dB
-    num_taps = 3        # Number of taps
-
-    tap_delays_ns = torch.rand(num_taps) * max_delay_ns  # Random delays in nanoseconds
-    tap_delays = tap_delays_ns * 1e-9                    # Convert to seconds
-    tap_gains = torch.rand(num_taps) * (max_gain_db - min_gain_db) + min_gain_db  # Random gains in dB
-    tap_phases = torch.rand(num_taps) * 2 * np.pi        # Random phases in radians
-
-
-    # Convert gains from dB to linear scale
-    tap_gains_linear = 10 ** (tap_gains / 10)
-
-    # Generate impulse response
-    impulse_response = torch.zeros(num_samples, dtype=torch.complex64)
-    for delay, gain, phase in zip(tap_delays, tap_gains_linear, tap_phases):
-        # Calculate the tap index based on delay and sampling rate
-        tap_index = int(torch.round(delay * sampling_rate))
-        if tap_index < num_samples:
-            impulse_response[tap_index] += gain * torch.exp(1j * phase)
-
-    # Convolve the TX signal with the impulse response
-    convolved_signal = torch.conv1d(padded_tx_signal.view(1, 1, -1), impulse_response.view(1, 1, -1)).view(-1)
-
-    # Add noise based on SINR
-    signal_power = torch.mean(torch.abs(convolved_signal)**2)
-    noise_power = signal_power / (10 ** (SINR / 10))
-    noise = torch.sqrt(noise_power / 2) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
-    rx_signal = convolved_signal + noise
-
-    # Add random start if required
-    if random_start:
-        start_index = torch.randint(0, len(rx_signal), (1,)).item()
-        rx_signal = torch.roll(rx_signal, shifts=start_index)
-
-    return rx_signal
 
 #######################################################################
 
 # Function to check if file exists and return a new filename
 def get_new_filename(directory, base_filename):
     os.makedirs(directory, exist_ok=True)
-    nn = 1
+    nn = 0
     while True:
         new_filename = f"{base_filename}_{nn}.csv"
         if not os.path.exists(os.path.join(directory, new_filename)):
             return new_filename
         nn += 1
 
+#######################################################################
 
+def apply_multipath_channel(signal, n_taps, max_delay, repeats=0, random_start=True, SINR_s=30, leading_zeros=500):
+    # note that the output is max_delay longer than input, due to the delayed symbols of some of the taps
 
+    h = torch.zeros(max_delay+1, dtype=torch.complex64)
 
+    for _ in range(n_taps):
+        delay = torch.randint(1, max_delay, (1,)).item()  # Avoid delay=0 for remaining taps
+        magnitude = torch.abs(torch.randn(1)) * 0.5
+        phase = torch.randn(1)
+        complex_gain = magnitude * torch.exp(1j * phase)
+        h[delay] = complex_gain
 
+    h[0] = torch.complex(torch.randn(1), torch.randn(1))
 
+    # Normalize the channel response
+    h = h / torch.norm(h)
 
+    # Convolve the signal with the channel
+    convolved_signal = torch.nn.functional.conv1d(signal.unsqueeze(0).unsqueeze(0), 
+                                               h.unsqueeze(0).unsqueeze(0), 
+                                               padding=max_delay).squeeze()
+    
+    # add leading zeros
+    zeros = torch.zeros(leading_zeros, dtype=convolved_signal.dtype)
+    convolved_signal = torch.cat((zeros, convolved_signal), dim=0)
+
+    # Add noise based on SINR
+    if SINR_s !=0:
+        signal_power = torch.mean(torch.abs(convolved_signal)**2)
+        noise_power = signal_power / (10 ** (SINR_s / 10))
+        noise = torch.sqrt(noise_power / 2) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
+        convolved_signal = convolved_signal + noise
+
+    # Add random start if required
+    if random_start:
+        start_index = torch.randint(0, len(convolved_signal), (1,)).item()
+        convolved_signal = torch.roll(convolved_signal, shifts=start_index)    
+    
+    # Repeat the signal if required
+    if repeats > 0:
+        convolved_signal = convolved_signal.repeat(repeats)
+
+    return convolved_signal
