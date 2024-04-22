@@ -174,14 +174,14 @@ class SDR:
         int: The transmit gain value that achieves the desired SINR without exceeding it.
         '''
         # Generate a QPSK signal
-        qpsk_symbols = np.tile(np.array([0.7+0.7j, -0.7+0.7j, -0.7-0.7j, 0.7-0.7j]), 10)
+        qpsk_symbols = np.tile(np.array([0.7+0.7j, -0.7+0.7j, -0.7-0.7j, 0.7-0.7j]), 100)
         qpsk_symbols = np.fft.ifft(np.fft.ifftshift(qpsk_symbols))
 
         # Initial setup: stop TX, set gains, and measure noise power
         self.SDR_TX_stop()
         self.SDR_gain_set(tx_gain=-80, rx_gain=SDR_RX_GAIN)
         time.sleep(0.3)  # Wait for settings to take effect
-        noise_sample = self.SDR_RX_receive(10000, normalize=False)
+        noise_sample = self.SDR_RX_receive(20000, normalize=False)
         noise_power = torch.mean(torch.abs(noise_sample)**2)
         # Prepare to record SINR and TX gain values
         SINR = []

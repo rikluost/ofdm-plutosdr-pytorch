@@ -6,6 +6,8 @@ import config
 import os
 
 save_plots = config.save_plots
+plot_width = 8
+titles=False
 
 ######################################################################
 
@@ -38,7 +40,7 @@ def mapping_table(Qm, plot=False):
 ######################################################################
 
 def visualize_constellation(pts, Qm):
-    import matplotlib.pyplot as plt
+    plt.figure(figsize=(4, 4))
     plt.scatter(pts.numpy().real, pts.numpy().imag)
     plt.title(f'Modulation Order {Qm} Constellation')
     plt.ylabel('Imaginary'); plt.xlabel('Real')
@@ -69,9 +71,10 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
 
     # Plotting the TTI mask
     if plotTTI:
-        plt.figure(figsize=(8, 1.5))
+        plt.figure(figsize=(plot_width, 1.5))
         plt.imshow(TTI_mask.numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
-        plt.title('TTI mask')
+        if titles:
+            plt.title('TTI mask')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
@@ -134,9 +137,10 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
     TTI[TTI_mask==2] = pilot_set.clone().detach()
     # Plotting the TTI modulated symbols
     if plotTTI:
-        plt.figure(figsize=(8, 1.5))
+        plt.figure(figsize=(plot_width, 1.5))
         plt.imshow(torch.abs(TTI).numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
-        plt.title('TTI modulated symbols')
+        if titles:
+            plt.title('TTI modulated symbols')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
@@ -188,7 +192,7 @@ def DFT(rxsignal, plotDFT=False):
 
     # Plot the DFT if required
     if plotDFT:
-        plt.figure(figsize=(8, 1.5))
+        plt.figure(figsize=(plot_width, 1.5))
         plt.imshow(torch.abs(OFDM_RX_DFT).numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
         plt.xlabel('Subcarrier Index')
         plt.ylabel('Symbol')
@@ -264,17 +268,35 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
     def dB(x):
         return 10 * torch.log10(torch.abs(x))
 
+    def phase(x):
+        return torch.angle(x)
+
     if plotEst:
-        plt.figure(figsize=(8, 4))
-        plt.plot(pilot_indices.cpu().numpy(), dB(H_estim_at_pilots).cpu().numpy(), 'ro-', label='Pilot estimates', markersize=8)
+        plt.figure(figsize=(plot_width, 3))
+        plt.plot(pilot_indices.cpu().numpy(), dB(H_estim_at_pilots).cpu().numpy(), 'ro-', label='Pilot abs estimates', markersize=8)
         plt.plot(all_indices.cpu().numpy(), dB(torch.tensor(H_estim)).cpu().numpy(), 'b-', label='Estimated channel', linewidth=2)
         plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
         plt.xlabel('Subcarrier Index', fontsize=12)
         plt.ylabel('Magnitude (dB)', fontsize=12)
         plt.legend(loc='upper right', fontsize=10)
-        plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
+        if titles:
+            plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
         if save_plots:
-            plt.savefig('pics/ChannelEstimate.png')
+            plt.savefig('pics/ChannelEstimateAbs.png')
+        plt.show()
+
+        plt.figure(figsize=(8, 3))
+        plt.plot(pilot_indices.cpu().numpy(), phase(H_estim_at_pilots).cpu().numpy(), 'ro-', label='Pilot phase estimates', markersize=8)
+        plt.plot(all_indices.cpu().numpy(), phase(torch.tensor(H_estim)).cpu().numpy(), 'b-', label='Estimated channel', linewidth=2)
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+        plt.xlabel('Subcarrier Index', fontsize=12)
+        plt.ylabel('Phase', fontsize=12)
+        plt.legend(loc='upper right', fontsize=10)
+        if titles:
+            plt.title('Pilot Estimates and Interpolated Channel Phase', fontsize=14)
+        
+        if save_plots:
+            plt.savefig('pics/ChannelEstimatePhase.png')
         plt.show()
 
     return H_estim
@@ -297,14 +319,15 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
 
     # Plotting the QAM symbols
     if plotQAM:
-        plt.figure(figsize=(8, 8))
+        plt.figure(figsize=(4, 4))
         plt.scatter(out.cpu().real, out.cpu().imag, label='QAM Symbols')
         plt.axis('equal')
         plt.xlim([-1.5, 1.5])
         plt.ylim([-1.5, 1.5])
         plt.xlabel('Real Part', fontsize=12)
         plt.ylabel('Imaginary Part', fontsize=12)
-        plt.title('Received QAM Constellation Diagram', fontsize=14)
+        if titles:
+            plt.title('Received QAM Constellation Diagram', fontsize=14)
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.legend(loc='upper right', fontsize=10)
         if save_plots:
@@ -383,12 +406,13 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
         rx_signal_numpy = rx_signal.cpu().numpy()  # Use .cpu() if rx_signal is on GPU
         rx_signal_normalized = rx_signal_numpy / np.max(np.abs(rx_signal_numpy))
 
-        plt.figure(0, figsize=(8, 4))
+        plt.figure(0, figsize=(plot_width, 3))
         plt.plot(rx_signal_normalized)
         plt.plot(b_payload, label='Payload Mask')
         plt.xlabel('Sample index')
         plt.ylabel('Amplitude')
-        plt.title('Received signal and payload mask')
+        if titles:
+            plt.title('Received signal and payload mask')
         plt.legend()
         if save_plots:
             plt.savefig('pics/RXsignal_sync.png')
@@ -418,12 +442,12 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, threshold=6, plot=False):
     correlation =  torch.complex(corr_result_real, corr_result_imag)
     correlation = correlation.abs()
     threshold = correlation.mean()*threshold
-
+    i_maxarg = torch.argmax(correlation).item() + leading_zeros
     # Find the first peak that exceeds the threshold
     for i, value in enumerate(correlation):
         if value > threshold:
             if plot:
-                plt.figure(figsize=(8, 4))
+                plt.figure(figsize=(plot_width, 3))
                 plt.plot(correlation.abs()[i-10:i+50])
                 plt.grid()
                 plt.xlabel("Samples from selected index")
@@ -433,11 +457,9 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, threshold=6, plot=False):
                     plt.savefig('pics/corr.png')
                 plt.show()
 
-            return i + leading_zeros
-        
-    i = torch.argmax(correlation).item() + leading_zeros
+            break 
 
-    return i
+    return i + leading_zeros, i_maxarg
 
 #######################################################################
 
@@ -447,12 +469,13 @@ def PSD_plot(signal, Fs, f, info='TX'):
     if isinstance(signal, torch.Tensor):
         signal = signal.numpy()
 
-    plt.figure(figsize=(8, 3))
+    plt.figure(figsize=(plot_width, 3))
     plt.psd(signal, Fs=Fs, NFFT=1024, Fc=f, color='blue')
     plt.grid(True)
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('PSD [dB/Hz]')
-    plt.title(f'Power Spectral Density, {info}')
+    if titles:
+        plt.title(f'Power Spectral Density, {info}')
     if save_plots:
         plt.savefig(f'pics/PSD_{info}.png')
     plt.show()
@@ -479,7 +502,7 @@ def apply_multipath_channel(signal, n_taps, max_delay, repeats=0, random_start=T
 
     for _ in range(n_taps):
         delay = torch.randint(1, max_delay, (1,)).item()  # Avoid delay=0 for remaining taps
-        magnitude = torch.abs(torch.randn(1)) * 0.5
+        magnitude = torch.abs(torch.randn(1)) * 0.3
         phase = torch.randn(1)
         complex_gain = magnitude * torch.exp(1j * phase)
         h[delay] = complex_gain
