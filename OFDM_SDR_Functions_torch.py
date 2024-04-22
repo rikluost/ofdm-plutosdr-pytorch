@@ -46,7 +46,7 @@ def visualize_constellation(pts, Qm):
     plt.ylabel('Imaginary'); plt.xlabel('Real')
     plt.tight_layout(); 
     if save_plots:
-        plt.savefig(f'pics/const.png')
+        plt.savefig(f'pics/const.png', bbox_inches='tight')
     
 ######################################################################
 
@@ -78,7 +78,7 @@ def TTI_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False):
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTImask.png')
+            plt.savefig('pics/TTImask.png', bbox_inches='tight')
         plt.tight_layout()
         plt.show()
 
@@ -144,7 +144,7 @@ def RE_mapping(TTI_mask, pilot_set, pdsch_symbols, plotTTI=False):
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTImod.png')
+            plt.savefig('pics/TTImod.png', bbox_inches='tight')
         plt.show()
 
     return TTI
@@ -197,7 +197,7 @@ def DFT(rxsignal, plotDFT=False):
         plt.xlabel('Subcarrier Index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTI_RX.png')
+            plt.savefig('pics/TTI_RX.png', bbox_inches='tight')
         plt.show()
 
     return OFDM_RX_DFT
@@ -282,7 +282,7 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, OFDM_demod
         if titles:
             plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
         if save_plots:
-            plt.savefig('pics/ChannelEstimateAbs.png')
+            plt.savefig('pics/ChannelEstimateAbs.png', bbox_inches='tight')
         plt.show()
 
         plt.figure(figsize=(8, 3))
@@ -331,7 +331,7 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F, plotQAM=False):
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.legend(loc='upper right', fontsize=10)
         if save_plots:
-            plt.savefig('pics/RXdSymbols.png')
+            plt.savefig('pics/RXdSymbols.png', bbox_inches='tight')
         plt.show()
     return out
 
@@ -415,7 +415,7 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False):
             plt.title('Received signal and payload mask')
         plt.legend()
         if save_plots:
-            plt.savefig('pics/RXsignal_sync.png')
+            plt.savefig('pics/RXsignal_sync.png', bbox_inches='tight')
         plt.show()
 
     # Remove the cyclic prefix
@@ -454,7 +454,7 @@ def sync_TTI(tx_signal, rx_signal, leading_zeros, threshold=6, plot=False):
                 plt.ylabel("Complex conjugate correlation")
                 plt.axvline(x=10, color = 'r', linewidth=3)
                 if save_plots:
-                    plt.savefig('pics/corr.png')
+                    plt.savefig('pics/corr.png', bbox_inches='tight')
                 plt.show()
 
             break 
@@ -477,7 +477,7 @@ def PSD_plot(signal, Fs, f, info='TX'):
     if titles:
         plt.title(f'Power Spectral Density, {info}')
     if save_plots:
-        plt.savefig(f'pics/PSD_{info}.png')
+        plt.savefig(f'pics/PSD_{info}.png', bbox_inches='tight')
     plt.show()
 
 

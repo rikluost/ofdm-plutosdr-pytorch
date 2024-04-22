@@ -20,13 +20,13 @@ PDSCH_power = 1  # PDSCH power
 
 # channel simulation
 n_taps = 1 
-max_delay = 3 #samples
+max_delay = 2 #samples
 
 # Additional Parameters
 leading_zeros = 80  # Number of symbols with zero value for noise measurement at the beginning of the transmission. Used for SINR estimation.
 
 # Save the generated plots
-save_plots = True
+save_plots = False
 
 # custom dataset
 class CustomDataset(Dataset):
