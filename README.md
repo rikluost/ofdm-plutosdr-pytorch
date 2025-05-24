@@ -36,7 +36,8 @@ A part of the project is an NN-based receiver model, trained and compared agains
         - [Radio Channel](#radio-channel)
             - [Transmission of IQ signals SDR](#transmission-of-iq-signals-sdr)
             - [Reception of IQ signals SDR](#reception-of-iq-signals-sdr)
-        - [Synchronisation and CP Removal](#synchronisation-and-cp-removal)
+        - [Synchronisation](#synchronisation)
+        - [CP Removal](#cp-removal)
         - [Conversion of time domain IQ symbols into frequency domain DFT](#conversion-of-time-domain-iq-symbols-into-frequency-domain-dft)
         - [Channel Estimation](#channel-estimation)
         - [Equalization](#equalization)
@@ -67,14 +68,14 @@ The performance graph included, which was created using integrated libraries in 
 Fig 1. Performance curve of an OFDM system as determined with empirical over the air measurements with SDR radio.
 
 ### Training data generator for ML-based receivers
-For building ML into the OFDM technology, `30-NN-receiver-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Randmonized radio channel model is implemented for faster creation of training datasets, without using an SDR radio.
+For building ML into the OFDM technology, `30-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Randmonized radio channel model is implemented for faster creation of training datasets, without using an SDR radio.
 
 ### Training a ML-based receiver
- `40-training-NN-based-receiver.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
+ `40-receiver-training.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
 
 ### Performance comparison of ZF/LS and NN-based receivers with testset and over the air
 
-In `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` the performance of trained NN-based receiver and LS/ZF receiver is compared by utilising a testset created earlier. In `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` the performance is compared with a real air interface.
+In `50-test-receivers.ipynb` the performance of trained NN-based receiver and LS/ZF receiver is compared by utilising a testset created earlier.
 
 ### Performance comparison of ZF/LS and NN-based receivers over the air with PlutoSDR
 
@@ -93,14 +94,10 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 
 #### Jupyter notebooks
 
-- `00-setup-pluto-MacOS.ipynb` hints on how to set up s plutoSdr on Mac M1
-- `05-SINR_curve.ipynb` helper for finding appropriate rx_gain and tx_gain values for your SDR set up
-- `10-ofdm-example-func.ipynb` end to end example of an OFDM system
-- `20-ofdm-performance-testing.ipynb` loop for system testing in varying radio conditions
-- `30-NN-receiver-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
-- `40-training-NN-based-receiver.ipynb` training a NN-based receiver.
-- `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` performance comparison between simple OFDM receiver and NN based receiver over the testset
-- `60-compare-ZF-LS-with-NN-based-RX-PlutoSDR.ipynb` performance comparison between simple OFDM receiver and NN based receiver over a real radio interface using PlutoSDR
+- `10-ofdm-example-func.ipynb` end to end example, compare conventional receiver with NN-based
+- `30-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
+- `40-receiver-training.ipynb` training a NN-based receiver.
+- `50-test-receivers.ipynb` performance comparison between simple OFDM receiver and NN based receiver over the testset
 
 #### Functions, configuration, models
 
