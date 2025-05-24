@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as tFunc
 import config
 import os
+import math
 
 save_plots = config.save_plots
 plot_width = 8
@@ -62,9 +63,9 @@ def mapping_table(Qm, plot=False): ###
     
     return mapping, demapping
 
-def OFDM_block_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False): ###
+def OFDM_block_mask(S, F, Fp, Sp, FFT_offset, plotOFDM_block=False): ###
     """
-    Create a Transmission Time Interval (TTI) mask for an OFDM system.
+    Create a Transmission Time Interval (OFDM_block) mask for an OFDM system.
 
     Args:
         S (int): Number of symbols.
@@ -72,47 +73,47 @@ def OFDM_block_mask(S, F, Fp, Sp, FFT_offset, plotTTI=False): ###
         Fp (int): Pilot subcarrier spacing.
         Sp (int): Pilot symbol spacing.
         FFT_offset (int): FFT offset, calculated as (FFT size - Number of subcarriers)/2.
-        plotTTI (bool): Flag to plot the TTI mask.
+        plotOFDM_block (bool): Flag to plot the OFDM_block mask.
 
     Returns:
-        torch.Tensor: The TTI mask.
+        torch.Tensor: The OFDM_block mask.
     """
     # Create a mask with all ones
-    TTI_mask = torch.ones((S, F), dtype=torch.int8)  # Initialize with ones
+    OFDM_mask = torch.ones((S, F), dtype=torch.int8)  # Initialize with ones
 
     # Set pilot symbol spacing Sp
-    TTI_mask[Sp, torch.arange(0, F, Fp)] = 2  # Mark pilot subcarriers
-    TTI_mask[Sp, 0] = 2  # Ensure the first subcarrier is a pilot
-    TTI_mask[Sp, F - 1] = 2  # Ensure the last subcarrier is a pilot
+    OFDM_mask[Sp, torch.arange(0, F, Fp)] = 2  # Mark pilot subcarriers
+    OFDM_mask[Sp, 0] = 2  # Ensure the first subcarrier is a pilot
+    OFDM_mask[Sp, F - 1] = 2  # Ensure the last subcarrier is a pilot
 
     # Set DC subcarrier to non-allocable power (oscillator phase noise)
-    TTI_mask[:, F // 2] = 3  # Mark DC subcarrier
+    OFDM_mask[:, F // 2] = 3  # Mark DC subcarrier
 
     # Add FFT offsets
-    TTI_mask = torch.cat((torch.zeros(S, FFT_offset, dtype=torch.int8), TTI_mask, torch.zeros(S, FFT_offset, dtype=torch.int8)), dim=1)
+    OFDM_mask = torch.cat((torch.zeros(S, FFT_offset, dtype=torch.int8), OFDM_mask, torch.zeros(S, FFT_offset, dtype=torch.int8)), dim=1)
 
-    # Plotting the TTI mask if plotTTI is True
-    if plotTTI:
+    # Plotting the OFDM_block mask if plotOFDM_block is True
+    if plotOFDM_block:
         plt.figure(figsize=(plot_width, 1.5))
-        plt.imshow(TTI_mask.numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
+        plt.imshow(OFDM_mask.numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
         if titles:
-            plt.title('TTI mask')
+            plt.title('OFDM_block mask')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTImask.png', bbox_inches='tight')
+            plt.savefig('pics/OFDM_blockmask.png', bbox_inches='tight')
         plt.tight_layout()
         plt.show()
 
-    return TTI_mask
+    return OFDM_mask
 
 
-def pilot_set(TTI_mask, power_scaling=1.0): ###
+def pilot_set(OFDM_mask, power_scaling=1.0): ###
     """
     Generate a set of QPSK pilot values scaled by the given power scaling factor.
 
     Args:
-        TTI_mask (torch.Tensor): The TTI mask indicating pilot positions.
+        OFDM_mask (torch.Tensor): The OFDM_block mask indicating pilot positions.
         power_scaling (float): Scaling factor for the pilot power.
 
     Returns:
@@ -121,19 +122,19 @@ def pilot_set(TTI_mask, power_scaling=1.0): ###
     # Define QPSK pilot values
     pilot_values = torch.tensor([-0.7 - 0.7j, -0.7 + 0.7j, 0.7 - 0.7j, 0.7 + 0.7j]) * power_scaling
 
-    # Count the number of pilot elements in the TTI mask
-    num_pilots = TTI_mask[TTI_mask == 2].numel()
+    # Count the number of pilot elements in the OFDM_block mask
+    num_pilots = OFDM_mask[OFDM_mask == 2].numel()
 
     # Create and return a list of pilot values repeated to match the number of pilots
     return pilot_values.repeat(num_pilots // 4 + 1)[:num_pilots]
 
 
-def create_payload(TTI_mask, Qm, mapping_table, power=1.0):
+def create_payload(OFDM_mask, Qm, mapping_table, power=1.0):
     """
     Generate data symbols for an OFDM system, parallelize to codewords, and modulate
 
     Args:
-        TTI_mask (torch.Tensor): The TTI mask indicating payload positions.
+        OFDM_mask (torch.Tensor): The OFDM_block mask indicating payload positions.
         Qm (int): Modulation order.
         mapping_table (dict): Mapping table for modulation symbols.
         power (float): Power scaling factor for the payload symbols.
@@ -141,8 +142,8 @@ def create_payload(TTI_mask, Qm, mapping_table, power=1.0):
     Returns:
         tuple: A tuple containing the generated bits and the corresponding payload symbols.
     """
-    # Count PDSCH elements
-    payload_elements_in_mask = TTI_mask.eq(1).sum().item()  
+    # Count payload elements
+    payload_elements_in_mask = OFDM_mask.eq(1).sum().item()  
 
     # Generate random bits
     payload_bits = torch.randint(0, 2, (payload_elements_in_mask, Qm), dtype=torch.float32)
@@ -164,36 +165,36 @@ def create_payload(TTI_mask, Qm, mapping_table, power=1.0):
     return payload_bits, payload_symbols
 
 
-def RE_mapping(TTI_mask, pilot_set, payload_symbols, plotTTI=False):
+def RE_mapping(OFDM_mask, pilot_set, payload_symbols, plotOFDM_block=False):
     """
-    Map Resource Elements (RE) in the OFDM-mask, allocating pilot and PDSCH symbols.
+    Map Resource Elements (RE) in the OFDM-mask, allocating pilot and payload symbols.
 
     Args:
-        TTI_mask (torch.Tensor): The TTI mask indicating positions for pilots and PDSCH symbols.
+        OFDM_mask (torch.Tensor): The OFDM_block mask indicating positions for pilots and payload symbols.
         pilot_set (torch.Tensor): The set of pilot symbols.
-        pdsch_symbols (torch.Tensor): The PDSCH symbols.
-        plotTTI (bool): Flag to plot the TTI modulated symbols.
+        payload_symbols (torch.Tensor): The payload symbols.
+        plotOFDM_block (bool): Flag to plot the OFDM_block modulated symbols.
 
     Returns:
-        torch.Tensor: The TTI with allocated symbols.
+        torch.Tensor: The OFDM_block with allocated symbols.
     """
     # Create a zero tensor for the overall F subcarriers * S symbols
-    IQ = torch.zeros(TTI_mask.shape, dtype=torch.complex64)
+    IQ = torch.zeros(OFDM_mask.shape, dtype=torch.complex64)
 
     # Allocate the payload and pilot
-    IQ[TTI_mask == 1] = payload_symbols.clone().detach()
-    IQ[TTI_mask == 2] = pilot_set.clone().detach()
+    IQ[OFDM_mask == 1] = payload_symbols.clone().detach()
+    IQ[OFDM_mask == 2] = pilot_set.clone().detach()
 
     # Plotting the IQ 
-    if plotTTI:
+    if plotOFDM_block:
         plt.figure(figsize=(plot_width, 1.5))
         plt.imshow(torch.abs(IQ).numpy(), aspect='auto')  # Convert tensor to NumPy array for plotting
         if titles:
-            plt.title('TTI modulated symbols')
+            plt.title('OFDM_block modulated symbols')
         plt.xlabel('Subcarrier index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTImod.png', bbox_inches='tight')
+            plt.savefig('pics/OFDM_blockmod.png', bbox_inches='tight')
         plt.show()
 
     return IQ
@@ -201,10 +202,10 @@ def RE_mapping(TTI_mask, pilot_set, payload_symbols, plotTTI=False):
 
 def IFFT(IQ): ###
     """
-    Perform an Inverse Fast Fourier Transform (IFFT) on the TTI matrix.
+    Perform an Inverse Fast Fourier Transform (IFFT) on the OFDM_block matrix.
 
     Args:
-        TTI (torch.Tensor): The TTI matrix with modulated symbols.
+        OFDM_block (torch.Tensor): The OFDM_block matrix with modulated symbols.
 
     Returns:
         torch.Tensor: The time-domain signal after IFFT.
@@ -234,69 +235,97 @@ def CP_addition(IQ, S, FFT_size, CP): ###
 
     return out.flatten()
 
-def apply_multipath_channel(iq, n_taps, max_delay, repeats=0, random_start=True, SINR=30, leading_zeros=500): ###
+
+def apply_multipath_channel_dop(iq, max_n_taps, max_delay, repeats=0, random_start=True, SINR=30,
+                                 leading_zeros=500, fc=432e6, velocity=30, fs=1e6, randomize= False):
     """
-    Apply a multipath channel effect to the given signal.
+    Apply a multipath channel effect with time variation due to Doppler (Jakes fading model).
 
     Parameters:
     iq (torch.Tensor): The input signal.
-    n_taps (int): Number of taps in the multipath channel.
-    max_delay (int): Maximum delay in the channel.
-    repeats (int): Number of times to repeat the signal. Default is 0.
-    random_start (bool): Whether to apply a random start to the convolved signal. Default is True.
-    SINR_s (float): Signal-to-Interference-plus-Noise Ratio (SINR) in dB. Default is 30.
-    leading_zeros (int): Number of leading zeros to add to the convolved signal. Default is 500.
+    max_n_taps (int): Maximum number of taps in the multipath channel.
+    max_delay (int): Maximum delay in samples.
+    repeats (int): Number of repetitions of the signal.
+    random_start (bool): Random circular shift of output.
+    SINR (float): Signal-to-Interference-plus-Noise Ratio in dB.
+    leading_zeros (int): Number of zeros to prepend to the output.
+    fc (float): Carrier frequency in Hz.
+    velocity (float): Maximum relative velocity in m/s.
+    fs (float): Sample rate in Hz.
 
     Returns:
-    torch.Tensor: The convolved signal with multipath effects.
+    torch.Tensor: Faded and noisy signal.
+    torch.Tensor: Static channel impulse response snapshot.
     """
-    # Initialize channel response
-    h = torch.zeros(max_delay + 1, dtype=torch.complex64)
 
-    # Generate taps for the channel
-    for _ in range(n_taps):
-        delay = torch.randint(1, max_delay, (1,)).item()  # Avoid delay=0 for remaining taps
-        magnitude = torch.abs(torch.randn(1)) * 0.3
-        phase = torch.randn(1)
-        complex_gain = magnitude * torch.exp(1j * phase)
-        h[delay] = complex_gain
+    c = 3e8
+    if randomize:
+        velocity = torch.rand(1).item() * (velocity - 1) + 1  # Avoid zero
+    f_D = (velocity / c) * fc  # Maximum Doppler shift
 
-    h[0] = torch.complex(torch.randn(1), torch.randn(1))
+    # Number of taps
+    n_taps = torch.randint(1, max_n_taps + 1, (1,)).item()
+    tap_indices = torch.randint(0, max_delay, (n_taps,))
+    h = torch.zeros(max_delay, dtype=torch.complex64)
 
-    # Normalize the channel response
-    h = h / torch.norm(h)
+    # Time vector
+    t = torch.arange(len(iq)) / fs
 
-    # Convolve the signal with the channel
-    convolved_signal = torch.nn.functional.conv1d(iq.unsqueeze(0).unsqueeze(0), 
-                                                  h.unsqueeze(0).unsqueeze(0), 
-                                                  padding=max_delay).squeeze()
-    
-    # Add leading zeros
-    zeros = torch.zeros(leading_zeros, dtype=convolved_signal.dtype)
-    convolved_signal = torch.cat((zeros, convolved_signal), dim=0)
+    # Output initialization
+    fading_signal = torch.zeros_like(iq, dtype=torch.complex64)
 
-    # Add noise based on SINR
+    for i, delay in enumerate(tap_indices):
+        power = torch.rand(1).item() / ((i + 1) * 10)  # Reduced per tap
+        f_D_local = torch.rand(1).item() * f_D  # Tap-specific Doppler spread
+        N = 16  # sinusoids per tap (can be increased)
+
+        # Clarke's model - angle spaced sinusoids
+        n = torch.arange(1, N + 1)
+        theta_n = 2 * math.pi * n / (N + 1)
+        phase_n = 2 * math.pi * torch.rand(N)
+
+        # Jakes fading model (real + imag parts)
+        jakes_real = torch.zeros(len(iq))
+        jakes_imag = torch.zeros(len(iq))
+        for k in range(N):
+            jakes_real += torch.cos(2 * math.pi * f_D_local * torch.cos(theta_n[k]) * t + phase_n[k])
+            jakes_imag += torch.sin(2 * math.pi * f_D_local * torch.cos(theta_n[k]) * t + phase_n[k])
+
+        fading = power * (jakes_real + 1j * jakes_imag) / math.sqrt(N)
+
+        # Apply delay and combine
+        delayed_iq = torch.nn.functional.pad(iq, (delay, 0))[:len(iq)]
+        fading_signal += fading * delayed_iq
+
+        h[delay] = fading[0]  # snapshot at t=0
+
+    # Leading zeros
+    fading_signal = torch.cat([torch.zeros(leading_zeros, dtype=fading_signal.dtype), fading_signal])
+
+    # Noise
     if SINR != 0:
-        signal_power = torch.mean(torch.abs(convolved_signal)**2)
+        signal_power = torch.mean(torch.abs(fading_signal) ** 2)
         noise_power = signal_power / (10 ** (SINR / 10))
-        noise = torch.sqrt(noise_power / 2) * (torch.randn_like(convolved_signal) + 1j * torch.randn_like(convolved_signal))
-        convolved_signal = convolved_signal + noise
+        noise = torch.sqrt(noise_power / 2) * (torch.randn_like(fading_signal) + 1j * torch.randn_like(fading_signal))
+        fading_signal += noise
 
-    # Add random start if required
+    # Optional circular shift
     if random_start:
-        start_index = torch.randint(0, len(convolved_signal), (1,)).item()
-        convolved_signal = torch.roll(convolved_signal, shifts=start_index)    
-    
-    # Repeat the signal if required
-    if repeats > 0:
-        convolved_signal = convolved_signal.repeat(repeats)
+        start_index = torch.randint(0, len(fading_signal), (1,)).item()
+        fading_signal = torch.roll(fading_signal, shifts=start_index)
 
-    return convolved_signal
+    # Repeat
+    if repeats > 0:
+        fading_signal = fading_signal.repeat(repeats)
+
+    return fading_signal, h
+
+
 
 
 def sync_iq(tx_signal, rx_signal, leading_zeros, threshold=6, plot=False): ###
     """
-    Synchronize the Transmission Time Interval (TTI) using cross-correlation.
+    Synchronize the Transmission Time Interval (OFDM_block) using cross-correlation.
 
     Parameters:
     tx_signal (torch.Tensor): Transmitted signal.
@@ -388,13 +417,13 @@ def SINR(rx_signal, index, leading_zeros): ###
     return SINR, rx_noise_power_0, rx_signal_power_0
 
 
-def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False): ###
+def CP_removal(rx_signal, OFDM_block_start, S, FFT_size, CP, plotsig=False): ###
     """
     Remove the cyclic prefix from the received signal.
 
     Args:
         rx_signal (torch.Tensor): The received signal.
-        TTI_start (int): The starting index of the TTI.
+        OFDM_block_start (int): The starting index of the OFDM_block.
         S (int): Number of symbols.
         FFT_size (int): FFT size.
         CP (int): Cyclic prefix length.
@@ -408,7 +437,7 @@ def CP_removal(rx_signal, TTI_start, S, FFT_size, CP, plotsig=False): ###
 
     # Mark the payload parts of the signal
     for s in range(S):
-        start_idx = TTI_start + (s + 1) * CP + s * FFT_size
+        start_idx = OFDM_block_start + (s + 1) * CP + s * FFT_size
         end_idx = start_idx + FFT_size
         b_payload[start_idx:end_idx] = 1
 
@@ -455,32 +484,54 @@ def DFT(rxsignal, plotDFT=False): ###
         plt.xlabel('Subcarrier Index')
         plt.ylabel('Symbol')
         if save_plots:
-            plt.savefig('pics/TTI_RX.png', bbox_inches='tight')
+            plt.savefig('pics/OFDM_block_RX.png', bbox_inches='tight')
         plt.show()
 
     return OFDM_RX_DFT
 
 
-def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, IQ_post_DFT, plotEst=False): ###
+import torch
+import matplotlib.pyplot as plt
+import torch
+import matplotlib.pyplot as plt
+
+def channelEstimate_LS(OFDM_mask_RE, pilot_symbols, F, FFT_offset, Sp, IQ_post_DFT, plotEst=False):
     """
     Perform Least Squares (LS) channel estimation using pilot symbols.
 
     Parameters:
-    TTI_mask_RE (torch.Tensor): Mask indicating pilot and data subcarriers.
+    OFDM_mask_RE (torch.Tensor): Mask indicating pilot and data subcarriers.
     pilot_symbols (torch.Tensor): Known pilot symbols.
     F (int): Number of subcarriers.
     FFT_offset (int): Offset for FFT processing.
     Sp (int): Subcarrier spacing.
-    OFDM_demod (torch.Tensor): Demodulated OFDM signal.
+    IQ_post_DFT (torch.Tensor): Demodulated OFDM signal.
     plotEst (bool): Whether to plot the estimated channel. Default is False.
 
     Returns:
     torch.Tensor: Estimated channel response.
     """
     
-    def torch_interp(x, xp, fp):
+    def unwrap_phase(phase):
         """
-        Perform linear interpolation on the given data points using PyTorch.
+        Unwrap the phase to prevent discontinuities.
+        """
+        phase_diff = torch.diff(phase)
+        phase_diff = torch.cat([phase_diff[:1], phase_diff])  # Retain the same length
+        phase_unwrapped = phase + 2 * torch.pi * torch.cumsum((phase_diff + torch.pi) // (2 * torch.pi), dim=-1)
+        #print(phase_unwrapped)
+        return phase_unwrapped
+
+    def wrap_phase(phase):
+        """
+        Wrap the phase back to the range [-pi, pi].
+        """
+        phase_wrapped = (phase + torch.pi) % (2 * torch.pi) - torch.pi
+        return phase_wrapped
+
+    def piecewise_linear_interp(x, xp, fp):
+        """
+        Perform piecewise linear interpolation on the given data points using PyTorch.
 
         Parameters:
         x (torch.Tensor): The x-coordinates at which to evaluate the interpolated values.
@@ -492,44 +543,53 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, IQ_post_DF
         """
         # Ensure xp and fp are sorted
         sorted_indices = torch.argsort(xp)
-        xp = xp[sorted_indices].to(device=x.device)
-        fp = fp[sorted_indices].to(device=x.device)
+        xp = xp[sorted_indices].float().to(device=x.device)
+        fp = fp[sorted_indices].float().to(device=x.device)
 
-        # Find the indices to the left and right of x
-        indices_left = torch.searchsorted(xp, x, right=True)
-        indices_left = torch.clamp(indices_left, 0, len(xp) - 1)
-        indices_right = torch.clamp(indices_left - 1, 0, len(xp) - 1)
+        # Initialize the interpolated values tensor
+        interp_values = torch.zeros_like(x, device=x.device).float()
 
-        # Perform linear interpolation
-        x_left, x_right = xp[indices_left], xp[indices_right]
-        f_left, f_right = fp[indices_left], fp[indices_right]
-        interp_values = f_left + (f_right - f_left) * (x - x_left) / (x_right - x_left)
+        for i in range(len(xp) - 1):
+            mask = (x >= xp[i]) & (x <= xp[i + 1])
+            interp_values[mask] = fp[i] + (fp[i + 1] - fp[i]) * (x[mask] - xp[i]) / (xp[i + 1] - xp[i])
 
         return interp_values
-
     
     # Pilot extraction
-    pilots = IQ_post_DFT[TTI_mask_RE == 2]
+    pilots = IQ_post_DFT[OFDM_mask_RE == 2]
 
     # Divide the pilots by the set pilot values to estimate channel at pilot positions
     H_estim_at_pilots = pilots / pilot_symbols
 
     # Interpolation indices for pilots
-    pilot_indices = torch.nonzero(TTI_mask_RE[Sp] == 2, as_tuple=False).squeeze()
+    pilot_indices = torch.nonzero(OFDM_mask_RE[Sp] == 2, as_tuple=False).squeeze()
 
     # All subcarrier indices
     all_indices = torch.arange(FFT_offset, FFT_offset + F)
 
-    # Linear interpolation for magnitude and phase
-    H_estim_abs = torch_interp(all_indices, pilot_indices, torch.abs(H_estim_at_pilots))
-    H_estim_phase = torch_interp(all_indices, pilot_indices, torch.angle(H_estim_at_pilots))
+    # Interpolate real and imaginary parts separately
+    H_estim_real = piecewise_linear_interp(all_indices, pilot_indices, H_estim_at_pilots.real)
+    H_estim_imag = piecewise_linear_interp(all_indices, pilot_indices, H_estim_at_pilots.imag)
 
-    # Convert magnitude and phase to complex numbers
-    H_estim_real = H_estim_abs * torch.cos(H_estim_phase)
-    H_estim_imag = H_estim_abs * torch.sin(H_estim_phase)
-
-    # Combine real and imaginary parts to form complex numbers
+    # Combine to complex estimate
     H_estim = torch.view_as_complex(torch.stack([H_estim_real, H_estim_imag], dim=-1))
+
+    # # Unwrap phase of pilot estimates
+    # H_estim_phase_unwrapped = unwrap_phase(torch.angle(H_estim_at_pilots))
+
+    # # Linear interpolation for magnitude and unwrapped phase
+    # H_estim_abs = piecewise_linear_interp(all_indices, pilot_indices, torch.abs(H_estim_at_pilots))
+    # H_estim_phase = piecewise_linear_interp(all_indices, pilot_indices, H_estim_phase_unwrapped)
+
+    # # Wrap the interpolated phase back to [-pi, pi]
+    # H_estim_phase_wrapped = wrap_phase(H_estim_phase)
+
+    # # Convert magnitude and phase to complex numbers
+    # H_estim_real = H_estim_abs * torch.cos(H_estim_phase_wrapped)
+    # H_estim_imag = H_estim_abs * torch.sin(H_estim_phase_wrapped)
+
+    # # Combine real and imaginary parts to form complex numbers
+    # H_estim = torch.view_as_complex(torch.stack([H_estim_real, H_estim_imag], dim=-1))
 
     def dB(x):
         return 10 * torch.log10(torch.abs(x))
@@ -545,10 +605,6 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, IQ_post_DF
         plt.xlabel('Subcarrier Index', fontsize=12)
         plt.ylabel('Magnitude (dB)', fontsize=12)
         plt.legend(loc='upper right', fontsize=10)
-        if titles:
-            plt.title('Pilot Estimates and Interpolated Channel in dB', fontsize=14)
-        if save_plots:
-            plt.savefig('pics/ChannelEstimateAbs.png', bbox_inches='tight')
         plt.tight_layout()
         plt.show()
 
@@ -560,13 +616,10 @@ def channelEstimate_LS(TTI_mask_RE, pilot_symbols, F, FFT_offset, Sp, IQ_post_DF
         plt.ylabel('Phase', fontsize=12)
         plt.legend(loc='upper right', fontsize=10)
         plt.tight_layout()
-        if titles:
-            plt.title('Pilot Estimates and Interpolated Channel Phase', fontsize=14)
-        if save_plots:
-            plt.savefig('pics/ChannelEstimatePhase.png', bbox_inches='tight')
         plt.show()
 
     return H_estim
+
 
 def remove_fft_Offests(IQ, F, FFT_offset): ###
     """
@@ -588,20 +641,59 @@ def remove_fft_Offests(IQ, F, FFT_offset): ###
 
     return OFDM_slice
 
-def equalize_ZF(IQ_post_DFT, H_estim, F, S, plotQAM=False): ###
+
+
+def phase_unwrap(phase):
     """
-    Perform Zero-Forcing (ZF) equalization on the OFDM demodulated signal.
+    Phase unwrapping function that handles phase discontinuities.
 
     Parameters:
-    OFDM_demod (torch.Tensor): Demodulated OFDM signal.
+    phase (np.ndarray): Phase array to be unwrapped.
+
+    Returns:
+    np.ndarray: Unwrapped phase array.
+    """
+    diff = np.diff(phase)
+    jumps = np.abs(diff) > 1  # Detect phase jumps greater than pi
+    cumulative_shift = np.cumsum(diff)
+    phase_unwrapped = phase.copy()
+    phase_unwrapped[1:] -= np.where(jumps, cumulative_shift, 0)  # Adjust phase unwrapping
+    
+
+    #return unwrapped_phase
+    return phase_unwrapped
+
+def equalize_ZF(IQ_post_DFT, H_estim, F, S, plotQAM=False):
+    """
+    Perform Zero-Forcing (ZF) equalization on the OFDM demodulated signal with phase unwrapping.
+
+    Parameters:
+    IQ_post_DFT (torch.Tensor): Demodulated OFDM signal after DFT.
     H_estim (torch.Tensor): Estimated channel response.
     F (int): Number of subcarriers.
     S (int): Number of OFDM symbols.
+    plotQAM (bool): Whether to plot QAM symbols before and after equalization (default: False).
+
     Returns:
     torch.Tensor: Equalized OFDM signal.
     """
-    # Reshape the OFDM data and perform equalization
-    equalized = IQ_post_DFT.view(S, F) / H_estim.to(device=IQ_post_DFT.device)
+
+
+    # Convert torch tensors to numpy arrays for easier manipulation (assuming real data)
+    IQ_post_DFT_np = IQ_post_DFT.cpu().numpy()
+    H_estim_np = H_estim.cpu().numpy()
+
+    # Perform phase unwrapping on the estimated channel response phase
+    phase_H_estim = np.angle(H_estim_np)
+    phase_H_estim_unwrapped = phase_unwrap(phase_H_estim)
+
+    # Apply Zero-Forcing (ZF) equalization with phase correction
+    equalized_np = IQ_post_DFT_np / np.abs(H_estim_np) * np.exp(-1j * phase_H_estim_unwrapped)
+
+    # Convert back to torch tensor and reshape to original dimensions
+    equalized = torch.tensor(equalized_np, dtype=torch.complex64, device=IQ_post_DFT.device).view(S, F)
+
+    #equalized = IQ_post_DFT.view(S, F) / H_estim.to(device=IQ_post_DFT.device)
     
     if plotQAM:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
@@ -614,7 +706,6 @@ def equalize_ZF(IQ_post_DFT, H_estim, F, S, plotQAM=False): ###
         ax1.set_ylabel('Imaginary Part', fontsize=12)
         ax1.set_title('Pre-equalization', fontsize=14)
         ax1.grid(True, linestyle='--', alpha=0.7)
-        ax1.legend(loc='upper right', fontsize=10)
         
         # Second subplot for Post Eq QAM Symbols
         for i in range(equalized.shape[0]):
@@ -626,7 +717,6 @@ def equalize_ZF(IQ_post_DFT, H_estim, F, S, plotQAM=False): ###
         ax2.set_ylabel('Imaginary Part', fontsize=12)
         ax2.set_title('Post-Equalization', fontsize=14)
         ax2.grid(True, linestyle='--', alpha=0.7)
-        ax2.legend(loc='upper right', fontsize=10)
         if save_plots:
             plt.tight_layout()
             plt.savefig('pics/RXdSymbols_side_by_side.png', bbox_inches='tight')
@@ -636,12 +726,12 @@ def equalize_ZF(IQ_post_DFT, H_estim, F, S, plotQAM=False): ###
     return equalized
 
 
-def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F): ###
+def get_payload_symbols(OFDM_mask_RE, equalized, FFT_offset, F): ###
     """
     Extract payload symbols from the equalized OFDM signal and optionally plot the QAM constellation.
 
     Parameters:
-    TTI_mask_RE (torch.Tensor): Mask indicating pilot and data subcarriers.
+    OFDM_mask_RE (torch.Tensor): Mask indicating pilot and data subcarriers.
     equalized (torch.Tensor): Equalized OFDM signal.
     FFT_offset (int): Offset for FFT processing.
     F (int): Number of subcarriers.
@@ -650,49 +740,9 @@ def get_payload_symbols(TTI_mask_RE, equalized, FFT_offset, F): ###
     torch.Tensor: Extracted payload symbols.
     """
     # Extract payload symbols
-    mask = TTI_mask_RE[:, FFT_offset:FFT_offset + F] == 1
+    mask = OFDM_mask_RE[:, FFT_offset:FFT_offset + F] == 1
     return equalized[mask]
 
-
-
-#def get_payload_symbols_raw(TTI_mask_RE, equalized):
-#    """
-#    Extract payload symbols from the equalized OFDM signal based on the TTI mask.
-
-    # Args:
-    #     TTI_mask_RE (torch.Tensor): The TTI mask indicating resource elements.
-    #     equalized (torch.Tensor): The equalized OFDM signal.
-
-    # Returns:
-    #     tuple: A tuple containing the extracted payload symbols and the original shape with zeros elsewhere.
-    # """
-    # # Extract payload symbols where TTI mask is 1
-    # out = equalized[TTI_mask_RE == 1]
-    
-    # # Create a tensor with the same shape as equalized, keeping payload symbols and zeroing out others
-    # out_orig = equalized * (TTI_mask_RE == 1).int()
-
-    # return out, out_orig
-
-
-#def get_pilot_symbols_raw(TTI_mask_RE, equalized):
-    # """
-    # Extract pilot symbols from the equalized OFDM signal.
-
-    # Parameters:
-    # TTI_mask_RE (torch.Tensor): Mask indicating pilot and data subcarriers.
-    # equalized (torch.Tensor): Equalized OFDM signal.
-
-    # Returns:
-    # tuple: A tuple containing:
-    #     - torch.Tensor: Extracted pilot symbols in a flattened form.
-    #     - torch.Tensor: Extracted pilot symbols in the original shape of the TTI mask.
-    # """
-    # # Extract pilot symbols in the shape of the TTI mask
-    # out = equalized[TTI_mask_RE == 2]
-    # out_orig = equalized * (TTI_mask_RE == 2).int()
-
-    # return out, out_orig
 
 def Demapping(QAM, de_mapping_table): ###
     """
@@ -751,22 +801,22 @@ def PS(bits):
     return bits.reshape((-1,))
 
 
-def calculate_error_rate(bits_est, pdsch_bits):
+def calculate_error_rate(bits_est, payload_bits):
     """
-    Calculate the error count and error rate between estimated bits and the original PDSCH bits.
+    Calculate the error count and error rate between estimated bits and the original payload bits.
 
     Args:
         bits_est (torch.Tensor): The estimated bits.
-        pdsch_bits (torch.Tensor): The original PDSCH bits.
+        payload_bits (torch.Tensor): The original payload bits.
 
     Returns:
         tuple: A tuple containing the error count and error rate.
     """
-    # Flatten the pdsch_bits tensor for comparison
-    flattened_pdsch_bits = pdsch_bits.flatten()
+    # Flatten the payload_bits tensor for comparison
+    flattened_payload_bits = payload_bits.flatten()
 
     # Count the number of unequal bits
-    error_count = torch.sum(bits_est != flattened_pdsch_bits).float()
+    error_count = torch.sum(bits_est != flattened_payload_bits).float()
 
     # Calculate the error rate
     error_rate = error_count / bits_est.numel()
@@ -793,6 +843,7 @@ def PSD_plot(signal, Fs, f, info='TX'):
     plt.figure(figsize=(8, 3))
     plt.psd(signal, Fs=Fs, NFFT=1024, Fc=f, color='blue')
     plt.grid(True)
+    plt.ylim(-120,)
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('PSD [dB/Hz]')
     if titles:
@@ -821,3 +872,26 @@ def get_new_filename(directory, base_filename):
             return new_filename
         nn += 1
 
+def extract_middle_subcarriers(input_tensor, num_subcarriers):
+    """
+    Extract the middle `num_subcarriers` from the last dimension of an OFDM block tensor.
+
+    Args:
+    input_tensor (tf.Tensor): Input tensor with shape (batch, ..., subcarriers) where
+                              'subcarriers' dimension includes oversampled data.
+    num_subcarriers (int): Number of subcarriers to extract from the middle.
+
+    Returns:
+    tf.Tensor: Tensor with the middle `num_subcarriers` extracted.
+    """
+    # Calculate the middle index of the last dimension
+    middle_index = input_tensor.shape[-1] // 2
+
+    # Calculate start and end indices for slicing
+    start_index = middle_index - num_subcarriers // 2
+    end_index = start_index + num_subcarriers
+
+    # Slice the tensor to get the middle subcarriers
+    sliced_tensor = input_tensor[..., start_index:end_index]
+
+    return sliced_tensor

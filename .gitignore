@@ -1,5 +1,11 @@
 data/
+torchlogs/
+.vscode/
+__pycache__/
+
 README copy.md
 
 00-setup-pluto-MacOS.ipynb
 05-SINR_curve.ipynb
+
+.conda/
