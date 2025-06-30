@@ -2,150 +2,82 @@
 
 ## Introduction
 
-This project presents an end to end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system utilizing the Analog Devices ADALM-Pluto (PlutoSDR) device for 1T1R SISO transmission and reception. The implementation leverages PyTorch, allowing for a seamless integration and experimentation with machine learning techniques for state-of-the-art Physical Layer (PHY) processing. 
+This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
 
-In addition to a simple Least Squares (LS) channel estimator and zero forcing (ZF) equalization, a neural netowrk (NN) based receiver is implemented to predict the bits from the IQ signals right after the Discreet Fourier Transformation (DFT) block. A functionality for creating training datasets, for training models, and testing different setups over radio interface or simulated radio channel are part of the project. 
+Beyond classical Least Squares (LS) channel estimation and Zero Forcing (ZF) equalization, this implementation introduces a neural network (NN)-based receiver that predicts bits directly from IQ signals following the Discrete Fourier Transform (DFT) block. The project supports dataset generation, model training, and testing over both simulated channels and real radio interfaces.
 
-A notable part of the project is an NN-based receiver model, trained and compared against the LS/ZF receiver. The training is done using simulated radio channels, and testing can be done either with simulated radio channel or over the air by using an SDR. This receiver model follows the DeepRX concept (Honkala et. al., 2021), albeit with a much simplified architecture. The implementation showcases that a NN-based receiver can learn and even surpass the traditional LS and ZF-based receivers in performance.
-
-
-
-## Table of contents
-
-<!-- TOC -->
-
-- [OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication](#ofdm-plutosdr-bridging-sdr-ofdm-and-ai-for-next-gen-wireless-communication)
-    - [Introduction](#introduction)
-    - [Table of contents](#table-of-contents)
-    - [OFDM building blocks as python functions](#ofdm-building-blocks-as-python-functions)
-        - [End to end example of OFDM system](#end-to-end-example-of-ofdm-system)
-        - [Training data generator for ML-based receivers](#training-data-generator-for-ml-based-receivers)
-        - [Training a ML-based receiver](#training-a-ml-based-receiver)
-        - [Performance comparison of ZF/LS and NN-based receivers with testset and over the air](#performance-comparison-of-zfls-and-nn-based-receivers-with-testset-and-over-the-air)
-        - [Performance comparison of ZF/LS and NN-based receivers over the air with PlutoSDR](#performance-comparison-of-zfls-and-nn-based-receivers-over-the-air-with-plutosdr)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-        - [Notebooks and other files](#notebooks-and-other-files)
-            - [Jupyter notebooks](#jupyter-notebooks)
-            - [Functions, configuration, models](#functions-configuration-models)
-    - [Brief intro to OFDM workflow](#brief-intro-to-ofdm-workflow)
-        - [TTI Mask Creation](#tti-mask-creation)
-        - [Data stream creation](#data-stream-creation)
-        - [Serial to parallel - Codewords](#serial-to-parallel---codewords)
-        - [Modulation](#modulation)
-        - [Conversion of frequency domain symbols into time domain FFT](#conversion-of-frequency-domain-symbols-into-time-domain-fft)
-        - [CP addition](#cp-addition)
-        - [Radio Channel](#radio-channel)
-            - [Transmission of IQ signals SDR](#transmission-of-iq-signals-sdr)
-            - [Reception of IQ signals SDR](#reception-of-iq-signals-sdr)
-        - [Synchronisation](#synchronisation)
-        - [CP Removal](#cp-removal)
-        - [Conversion of time domain IQ symbols into frequency domain DFT](#conversion-of-time-domain-iq-symbols-into-frequency-domain-dft)
-        - [Channel Estimation](#channel-estimation)
-        - [Equalization](#equalization)
-        - [Symbol demapping](#symbol-demapping)
-        - [Data stream recreation](#data-stream-recreation)
-        - [Bit Error Rate BER calculation](#bit-error-rate-ber-calculation)
-    - [NN-based receiver](#nn-based-receiver)
-        - [Training data generation](#training-data-generation)
-        - [Training a NN-based receiver model](#training-a-nn-based-receiver-model)
-        - [Comparing performance on testset](#comparing-performance-on-testset)
-        - [Comparing performance over the air with SDR radio](#comparing-performance-over-the-air-with-sdr-radio)
-    - [License](#license)
-    - [References](#references)
-    - [Disclaimer: Legal Compliance in Radio Transmission](#disclaimer-legal-compliance-in-radio-transmission)
-
-<!-- /TOC -->
+A central contribution is the comparison of an NN-based receiver—trained on simulated channels and tested over-the-air or with simulated data—against the LS/ZF approach. The NN model, inspired by the DeepRx architecture (Honkala et al., 2021), uses a simplified structure to demonstrate that data-driven PHY can meet or exceed classical performance in practical settings.
 
 ## Short literature review
 
-Orthogonal Frequency Division Multiplexing (OFDM), first formalized for multichannel data transmission by Chang [1], underpins much of modern wireless communications. Goldsmith [3] offers a foundational treatment of wireless channel characteristics, laying groundwork for OFDM’s practical deployment. The rise of Software Defined Radio (SDR) platforms, as presented in PySDR [5] and the ADALM-PLUTO documentation [9], has enabled flexible prototyping and experimentation with these systems.
+OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. SDR platforms like PySDR [5] and the ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation.
 
-Recent advances leverage deep learning to enhance physical-layer processing. Goodfellow et al. [2] and Paszke et al. [8] detail the theory and tools behind modern neural networks, while Honkala et al. [7] demonstrate fully convolutional deep receivers (DeepRx) outperforming classical algorithms in challenging wireless conditions. Ju et al. [4] provide a comparative study, showing deep learning’s potential over traditional iterative algorithms for joint channel estimation and detection in OFDM systems. Visual and conceptual clarity for these complex signal processing methods is enhanced by resources like DSPIllustrations [6].
+Recent research applies deep learning to the PHY, with Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. DSPIllustrations [6] provides valuable visualizations for such signal processing concepts.
 
-## OFDM building blocks as python functions
+## Python implementation
 
-The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the end-to-end examples, either with an actual radio interface using SDR or with simulated radio channels. 
-
-### End to end example of OFDM system 
-The `10-ofdm-example-func.ipynb` notebook is designed to demonstrate the essential principles of OFDM (Orthogonal Frequency Division Multiplexing) transmission and reception using the PlutoSDR. This notebook covers the entire OFDM process, including the implementation of a simple Least Squares (LS) channel estimator and Zero Forcing (ZF) equalizer, as well as the alternative DeepRx-type fully convolutional NN-based receiver.
-
-### Training data generator for ML-based receivers
-For building ML into the OFDM technology, `30-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Randmonized radio channel model is implemented for faster creation of training datasets, without using an SDR radio.
-
-### Training a ML-based receiver
- `40-receiver-training.ipynb` contains an example on how to build an train a NN-based receiver. Example NN-based receiver is much simplified version of the DeepRX Honkala et. al describes in (Honkala et. al. 2021). The receiver is fully convolutional, ResNet-style receiver utilising residual blocks with skip connection. Simple training loop is used for training the the receiver.
-
-### Performance comparison of ZF/LS and NN-based receivers with testset and over the air
-
-In `50-test-receivers.ipynb` the performance of trained NN-based receiver and LS/ZF receiver is compared by utilising a testset created earlier.
-
-### Performance comparison of ZF/LS and NN-based receivers over the air with PlutoSDR
-
-
-## Prerequisites
+### Prerequisites
 
 Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio
 
 TODO: Some additional libraries may be required - update.
 
-For using with an SDR, a PlutoSDR is required.
+PlutoSDR required for hardware experiments.
 
 
-## Installation
+### Installation
 
 ```
 git clone https://github.com/rikluost/pluto # for the latest development version
 ```
 
-### Notebooks and other files
+### Key files and folders
 
-#### Jupyter notebooks
+#### Example Notebooks
+- `10-ofdm-example-func.ipynb`: Full OFDM Tx/Rx chain, comparing classical LS/ZF and DeepRx-style NN receivers.
+- `30-dataset-creator.ipynb`: Dataset generator for training NN-based receivers with random data and simulated channel.
+- `40-receiver-training.ipynb`: Training and validation of a ResNet-style, fully convolutional NN-based receiver.
+- `50-test-receivers.ipynb`: Performance comparison between CNNNN-based and LS/ZF receivers.
 
-- `10-ofdm-example-func.ipynb` end to end example, compare conventional receiver with NN-based
-- `30-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
-- `40-receiver-training.ipynb` training a NN-based receiver.
-- `50-test-receivers.ipynb` performance comparison between simple LS/ZF OFDM receiver and NN-based receiver over the testset.
+#### Supporting Code and Data
+- `SDR_Pluto.py`: SDR interface utilities.
+- `OFDM_SDR_Functions_torch.py`: OFDM, channel simulation, and PHY utilities.
+- `config.py`: Configurations and dataset classes.
+- `models_local.py`: PyTorch architectures for NN-based receivers.
+- `data/`: Trained models, weights, and datasets.
+- `pics/`, `pics_doc/`: Saved plots for analysis and documentation.
 
-#### Functions, configuration, models
 
-- `SDR_Pluto.py` class for handling SDR functionality
-- `OFDM_SDR_Functions_torch.py` OFDM building block functions, channel simulation
-- `config.py` OFDM related configuration parameters are stored here. Also the training data structure class is located here
-- `models_local.py` the NN-based receiver as pyTorch model architecture 
-- `data/` folder contains the actual models and weights, training datasets and testset
-- `pics/` folder for saving new graphs
-- `pics_doc/` any graphs stored for this documentation
+## Introduction to the implemented OFDM workflow
 
-## Brief intro to OFDM workflow
-
-The following workflow covers TTI Mask Creation, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation/Over The Air Transmission, Synchronization, Channel Estimation, Equalization, Symbol Demapping, Data Stream Recreation, and Bit Error Rate (BER) Calculation.
+The following workflow covers TTI Mask Creation with Pilot Symbols, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation/Over The Air Transmission, Synchronization, Channel Estimation, Equalization, Symbol Demapping, Data Stream Recreation, and Bit Error Rate (BER) Calculation.
 
 ### TTI Mask Creation
 
 Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, only one pilot symbol is possible.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImask.png) 
+
 Fig 1. TTI mask.
 
 ### Data stream creation
 
 A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is in the following stes used for modulating the TTI, and the data is also stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
 
-### Serial to parallel - Codewords
+### Serial to parallel
 
-The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups defined by the modulation order (shape [# OFDM symbols, FFT size]). 
+The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups defined by the modulation order. The number of the groups equals to the number of PDSCH elements in one TTI.
 
 ### Modulation
 
-The process of encoding (= mapping) the bits onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
+The process of encoding the bits onto the different subcarriers by varying their amplitude and phase using M-QAM-modulation, according to the data being transmitted.
 
-Example of the constellation of a common QAM modulation scheme:
+Example of the constellation of 16-QAM modulation scheme:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/QAMconstellation.png) 
 
 Fig 2. Constellation.
 
-The TTI mask after filled with modulated symbols:
+The TTI mask after filled with pilots and modulated symbols:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImod.png) 
 
 Fig 3. Modulated TTI.
