@@ -239,6 +239,7 @@ To showcase the setup, a training dataset containing 20,000 samples, each with r
 The training process and its nuances are detailed in the 40-training-NN-based-receiver.ipynb notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
+
 Fig 11. The model performance during the training process
 
 Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
@@ -255,15 +256,21 @@ Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and i
 Fig 13. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance_LS_nn.png) 
+
 Fig 14. Performance comparison between the NN-based and classic receivers over real-life radio interface
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## References
+## References and Resources
 
 Chang, Robert W. "Synthesis of Band-Limited Orthogonal Signals for Multichannel Data Transmission." Bell System Technical Journal 45 (December 1966): 1775-1796.
+
+A. Goldsmith, “Wireless Communications,” Cambridge University Press, Cambridge, 2005. http://dx.doi.org/10.1017/CBO9780511841224
+
+Haocheng Ju, Haimiao Zhang, Lin Li, Xiao Li, Bin Dong,
+A comparative study of deep learning and iterative algorithms for joint channel estimation and signal detection in OFDM systems,Signal Processing, Volume 223, 2024, 109554, ISSN 0165-1684, https://doi.org/10.1016/j.sigpro.2024.109554.
 
 “PySDR: A Guide to SDR and DSP Using Python — PySDR: A Guide to SDR and DSP Using Python 0.1 Documentation.” Accessed November 15, 2021. https://pysdr.org/index.html.
 
