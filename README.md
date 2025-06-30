@@ -10,9 +10,9 @@ A central contribution is the comparison of an NN-based receiver—trained on si
 
 ## Short literature review
 
-OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. SDR platforms like PySDR [5] and the ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation.
+OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. SDR platforms the ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation. "PySDR: A Guide to SDR and DSP using Python" [5] and DSPIllustrations [6] provides insights into use of SDR and signal processing concepts using python.
 
-Recent research applies deep learning to the PHY, with Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. DSPIllustrations [6] provides valuable visualizations for such signal processing concepts.
+Recent research applies deep learning to the PHY, with Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. 
 
 ## Python implementation
 
