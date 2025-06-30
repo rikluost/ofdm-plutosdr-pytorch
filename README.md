@@ -6,7 +6,9 @@ This project presents an end to end Python implementation of an Over-the-Air (OT
 
 In addition to a simple Least Squares (LS) channel estimator and zero forcing (ZF) equalization, a neural netowrk (NN) based receiver is implemented to predict the bits from the IQ signals right after the Discreet Fourier Transformation (DFT) block. A functionality for creating training datasets, for training models, and testing different setups over radio interface or simulated radio channel are part of the project. 
 
-A notable part of the project is an NN-based receiver model, trained and compared against the LS/ZF receiver. The training is done using simulated radio channels, and testing can be done either with simulated radio channel or over the air by using an SDR. This receiver model follows the DeepRX concept (Honkala et. al., 2021), albeit with a simplified and lighter architecture. The implementation showcases that the NN-based receiver can learn and even surpass the traditional LS and ZF-based receivers in performance.
+A notable part of the project is an NN-based receiver model, trained and compared against the LS/ZF receiver. The training is done using simulated radio channels, and testing can be done either with simulated radio channel or over the air by using an SDR. This receiver model follows the DeepRX concept (Honkala et. al., 2021), albeit with a much simplified architecture. The implementation showcases that a NN-based receiver can learn and even surpass the traditional LS and ZF-based receivers in performance.
+
+
 
 ## Table of contents
 
@@ -55,12 +57,18 @@ A notable part of the project is an NN-based receiver model, trained and compare
 
 <!-- /TOC -->
 
+## Short literature review
+
+Orthogonal Frequency Division Multiplexing (OFDM), first formalized for multichannel data transmission by Chang [1], underpins much of modern wireless communications. Goldsmith [3] offers a foundational treatment of wireless channel characteristics, laying groundwork for OFDM’s practical deployment. The rise of Software Defined Radio (SDR) platforms, as presented in PySDR [5] and the ADALM-PLUTO documentation [9], has enabled flexible prototyping and experimentation with these systems.
+
+Recent advances leverage deep learning to enhance physical-layer processing. Goodfellow et al. [2] and Paszke et al. [8] detail the theory and tools behind modern neural networks, while Honkala et al. [7] demonstrate fully convolutional deep receivers (DeepRx) outperforming classical algorithms in challenging wireless conditions. Ju et al. [4] provide a comparative study, showing deep learning’s potential over traditional iterative algorithms for joint channel estimation and detection in OFDM systems. Visual and conceptual clarity for these complex signal processing methods is enhanced by resources like DSPIllustrations [6].
+
 ## OFDM building blocks as python functions
 
-The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the build demo set ups either with an actual radio interface or with simulated radio channels. 
+The functions and classes in `OFDM_SDR_Functions_torch.py` can facilitate the end-to-end examples, either with an actual radio interface using SDR or with simulated radio channels. 
 
 ### End to end example of OFDM system 
-The `10-ofdm-example-func.ipynb` notebook is designed to demonstrate the essential principles of OFDM (Orthogonal Frequency Division Multiplexing) transmission and reception using the PlutoSDR. This notebook comprehensively covers the entire OFDM process, including the implementation of a simple Least Squares (LS) channel estimator and Zero Forcing (ZF) equalizer, as well as an alternative NN-based receiver.
+The `10-ofdm-example-func.ipynb` notebook is designed to demonstrate the essential principles of OFDM (Orthogonal Frequency Division Multiplexing) transmission and reception using the PlutoSDR. This notebook covers the entire OFDM process, including the implementation of a simple Least Squares (LS) channel estimator and Zero Forcing (ZF) equalizer, as well as the alternative DeepRx-type fully convolutional NN-based receiver.
 
 ### Training data generator for ML-based receivers
 For building ML into the OFDM technology, `30-dataset-creator.ipynb` provides an example on how to create torch datasets for training e.g. an NN based receiver, storing received pilot signals and modulated data as inputs, and associated original bitstream as lables. Randmonized radio channel model is implemented for faster creation of training datasets, without using an SDR radio.
@@ -77,9 +85,11 @@ In `50-test-receivers.ipynb` the performance of trained NN-based receiver and LS
 
 ## Prerequisites
 
-Python > 3.10, torch, numPy, matplotlib, libiio, pylib-iio
+Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio
 
 TODO: Some additional libraries may be required - update.
+
+For using with an SDR, a PlutoSDR is required.
 
 
 ## Installation
@@ -88,7 +98,6 @@ TODO: Some additional libraries may be required - update.
 git clone https://github.com/rikluost/pluto # for the latest development version
 ```
 
-
 ### Notebooks and other files
 
 #### Jupyter notebooks
@@ -96,7 +105,7 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 - `10-ofdm-example-func.ipynb` end to end example, compare conventional receiver with NN-based
 - `30-dataset-creator.ipynb` torch dataset creation tool for training NN-based receivers
 - `40-receiver-training.ipynb` training a NN-based receiver.
-- `50-test-receivers.ipynb` performance comparison between simple OFDM receiver and NN based receiver over the testset
+- `50-test-receivers.ipynb` performance comparison between simple LS/ZF OFDM receiver and NN-based receiver over the testset.
 
 #### Functions, configuration, models
 
@@ -105,7 +114,8 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 - `config.py` OFDM related configuration parameters are stored here. Also the training data structure class is located here
 - `models_local.py` the NN-based receiver as pyTorch model architecture 
 - `data/` folder contains the actual models and weights, training datasets and testset
-- `pics/` any graphs for this documentation 
+- `pics/` folder for saving new graphs
+- `pics_doc/` any graphs stored for this documentation
 
 ## Brief intro to OFDM workflow
 
@@ -124,7 +134,7 @@ A data stream is created for filling the TTI PDSCH resources with random data fo
 
 ### Serial to parallel - Codewords
 
-The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups (codewords) defined by the modulation order. 
+The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups defined by the modulation order (shape [# OFDM symbols, FFT size]). 
 
 ### Modulation
 
@@ -132,10 +142,12 @@ The process of encoding (= mapping) the bits onto the different subcarriers by v
 
 Example of the constellation of a common QAM modulation scheme:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/QAMconstellation.png) 
+
 Fig 2. Constellation.
 
 The TTI mask after filled with modulated symbols:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImod.png) 
+
 Fig 3. Modulated TTI.
 
 ### Conversion of frequency domain symbols into time domain (IFFT)
@@ -179,6 +191,7 @@ Fig 5. Power spectral density of the signal received from the SDR receiver.
 PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/corr.png) 
+
 Fig 6. Synchronisation by correlation. ABS of symbols from 10 before to 50 after the detected start of the signal.
 
 ### CP Removal
@@ -197,6 +210,7 @@ The received time-domain signal is converted back into the frequency domain usin
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTI_RX.png) 
 
 Fig 8. Received TTI before the equalisation.
+
 
 ### Channel Estimation
 
@@ -245,6 +259,7 @@ Fig 11. The model performance during the training process
 Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_ber.png) 
+
 Fig 12. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
@@ -265,22 +280,23 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## References and Resources
 
-Chang, Robert W. "Synthesis of Band-Limited Orthogonal Signals for Multichannel Data Transmission." Bell System Technical Journal 45 (December 1966): 1775-1796.
+[1] Chang, Robert W. "Synthesis of Band-Limited Orthogonal Signals for Multichannel Data Transmission." Bell System Technical Journal 45 (December 1966): 1775-1796.
 
-A. Goldsmith, “Wireless Communications,” Cambridge University Press, Cambridge, 2005. http://dx.doi.org/10.1017/CBO9780511841224
+[2] Goodfellow, Ian, Yoshua Bengio, and Aaron Courville. Deep Learning. The MIT Press, 2016. http://dx.doi.org/10.5555/3086952
 
-Haocheng Ju, Haimiao Zhang, Lin Li, Xiao Li, Bin Dong,
-A comparative study of deep learning and iterative algorithms for joint channel estimation and signal detection in OFDM systems,Signal Processing, Volume 223, 2024, 109554, ISSN 0165-1684, https://doi.org/10.1016/j.sigpro.2024.109554.
+[3] A. Goldsmith, “Wireless Communications,” Cambridge University Press, Cambridge, 2005. http://dx.doi.org/10.1017/CBO9780511841224
 
-“PySDR: A Guide to SDR and DSP Using Python — PySDR: A Guide to SDR and DSP Using Python 0.1 Documentation.” Accessed November 15, 2021. https://pysdr.org/index.html.
+[4] Haocheng Ju, Haimiao Zhang, Lin Li, Xiao Li, Bin Dong, "A comparative study of deep learning and iterative algorithms for joint channel estimation and signal detection in OFDM systems", Signal Processing, Volume 223, 2024, 109554, ISSN 0165-1684, https://doi.org/10.1016/j.sigpro.2024.109554.
 
-“DSPIllustrations.Com.” Accessed November 15, 2021. https://dspillustrations.com/pages/index.html.
+[5] Mark Lichtman, “PySDR: A Guide to SDR and DSP Using Python — PySDR: A Guide to SDR and DSP Using Python 0.1 Documentation.” Accessed November 15, 2021. https://pysdr.org/index.html.
 
-Honkala, Mikko, Dani Korpi, and Janne M. J. Huttunen. “DeepRx: Fully Convolutional Deep Learning Receiver.” IEEE Transactions on Wireless Communications 20, no. 6 (June 2021): 3925–40. https://doi.org/10.1109/TWC.2021.3054520.
+[6] Maximilian Matthe, “DSPIllustrations.Com.” Accessed November 15, 2021. https://dspillustrations.com/pages/index.html.
 
-Paszke, Adam, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen, et al. “PyTorch: An Imperative Style, High-Performance Deep Learning Library.” In Advances in Neural Information Processing Systems 32, 8024–35. Curran Associates, Inc., 2019. http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-performance-deep-learning-library.pdf.
+[7] Honkala, Mikko, Dani Korpi, and Janne M. J. Huttunen. “DeepRx: Fully Convolutional Deep Learning Receiver.” IEEE Transactions on Wireless Communications 20, no. 6 (June 2021): 3925–40. https://doi.org/10.1109/TWC.2021.3054520.
 
-“ADALM-PLUTO Evaluation Board | Analog Devices.” Accessed November 15, 2021. https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/adalm-pluto.html#eb-overview.
+[8] Paszke, Adam, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen, et al. “PyTorch: An Imperative Style, High-Performance Deep Learning Library.” In Advances in Neural Information Processing Systems 32, 8024–35. Curran Associates, Inc., 2019. http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-performance-deep-learning-library.pdf.
+
+[9] “ADALM-PLUTO Evaluation Board | Analog Devices.” Accessed November 15, 2021. https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/adalm-pluto.html#eb-overview.
 
 
 
