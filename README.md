@@ -115,7 +115,7 @@ The following workflow covers TTI Mask Creation, Data Stream Creation, Modulatio
 
 Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, only one pilot symbol is possible.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTImask.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImask.png) 
 Fig 1. TTI mask.
 
 ### Data stream creation
@@ -131,11 +131,11 @@ The conversion of a data stream from serial to parallel format involves dividing
 The process of encoding (= mapping) the bits onto the different subcarriers by varying their amplitude and phase, according to the data being transmitted.
 
 Example of the constellation of a common QAM modulation scheme:
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/QAMconstellation.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/QAMconstellation.png) 
 Fig 2. Constellation.
 
 The TTI mask after filled with modulated symbols:
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTImod.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImod.png) 
 Fig 3. Modulated TTI.
 
 ### Conversion of frequency domain symbols into time domain (IFFT)
@@ -163,7 +163,7 @@ $\mathbf{H}$, the radio channel matrix, can be constructed here either by transm
 
 The signals can be passed through the SDR transmitter, or through the simulated radio channel. The below graph shows the power spectral density of transmitted signal $\mathbf{x}$:
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_TX.png)
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_TX.png)
 
 Fig 4. Power spectral density of the signal fed to the SDR transmitter.
 
@@ -171,21 +171,21 @@ Fig 4. Power spectral density of the signal fed to the SDR transmitter.
 
 The signal can be received by the SDR receiver, which translates it to time domain IQ signals, or alternatively by using the output of simulated radio channel. The below graph shows the power spectral density of received signal $\mathbf{y}$:
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_RX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_RX.png) 
 
 Fig 5. Power spectral density of the signal received from the SDR receiver.
 
 ### Synchronisation
 PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/corr.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/corr.png) 
 Fig 6. Synchronisation by correlation. ABS of symbols from 10 before to 50 after the detected start of the signal.
 
 ### CP Removal
 
 Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXsignal_sync.png) 
 
 Fig 7. CP Removal
 
@@ -194,7 +194,7 @@ Fig 7. CP Removal
 
 The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and eventually the transmitted data.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTI_RX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTI_RX.png) 
 
 Fig 8. Received TTI before the equalisation.
 
@@ -202,7 +202,7 @@ Fig 8. Received TTI before the equalisation.
 
 Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/ChannelEstimate.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/ChannelEstimate.png) 
 
 Fig 9. Absolute values of the received pilot symbols.
 
@@ -210,7 +210,7 @@ Fig 9. Absolute values of the received pilot symbols.
 
 Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXdSymbols.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXdSymbols.png) 
 
 Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
 
@@ -238,24 +238,24 @@ To showcase the setup, a training dataset containing 20,000 samples, each with r
 
 The training process and its nuances are detailed in the 40-training-NN-based-receiver.ipynb notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_loss.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_loss.png) 
 
 Fig 11. The model performance during the training process
 
 Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/training_ber.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_ber.png) 
 Fig 12. Bit Error Rate (BER) during the training process
 
 ### Comparing performance on testset
 
 Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12, 13. 
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/BER_distribution_testset_log_scale.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/BER_distribution_testset_log_scale.png) 
 
 Fig 13. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/Performance_LS_nn.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/Performance_LS_nn.png) 
 
 Fig 14. Performance comparison between the NN-based and classic receivers over real-life radio interface
 

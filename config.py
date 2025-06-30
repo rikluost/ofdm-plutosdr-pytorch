@@ -26,7 +26,7 @@ TTI_duration = Ts * (FFT_size + CP) * S * 1000  # TTI duration in ms
 SDR_RX_IP="ip:192.168.10.191"
 SDR_TX_IP="ip:192.168.10.191"
 
-SDR_TX_Frequency = int(434e6)  # base band center frequency
+SDR_TX_Frequency = int(3500e6)  # base band center frequency
 SDR_TX_BANDWIDTH = SCS*F*4
 tx_gain = -5  # Transmission gain in dB for SDR
 rx_gain = 30  # Reception gain in dB for SDR
