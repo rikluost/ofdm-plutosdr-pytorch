@@ -163,7 +163,8 @@ $\mathbf{H}$, the radio channel matrix, can be constructed here either by transm
 
 The signals can be passed through the SDR transmitter, or through the simulated radio channel. The below graph shows the power spectral density of transmitted signal $\mathbf{x}$:
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_TX.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_TX.png)
+
 Fig 4. Power spectral density of the signal fed to the SDR transmitter.
 
 #### Reception of IQ signals (SDR)
@@ -171,6 +172,7 @@ Fig 4. Power spectral density of the signal fed to the SDR transmitter.
 The signal can be received by the SDR receiver, which translates it to time domain IQ signals, or alternatively by using the output of simulated radio channel. The below graph shows the power spectral density of received signal $\mathbf{y}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/PSD_RX.png) 
+
 Fig 5. Power spectral density of the signal received from the SDR receiver.
 
 ### Synchronisation
@@ -184,6 +186,7 @@ Fig 6. Synchronisation by correlation. ABS of symbols from 10 before to 50 after
 Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXsignal_sync.png) 
+
 Fig 7. CP Removal
 
 
@@ -192,6 +195,7 @@ Fig 7. CP Removal
 The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and eventually the transmitted data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/TTI_RX.png) 
+
 Fig 8. Received TTI before the equalisation.
 
 ### Channel Estimation
@@ -199,13 +203,15 @@ Fig 8. Received TTI before the equalisation.
 Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/ChannelEstimate.png) 
-Fig 9. Absolute value of the received pilot symbols.
+
+Fig 9. Absolute values of the received pilot symbols.
 
 ### Equalization
 
 Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. 
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics/RXdSymbols.png) 
+
 Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
 
 ### Symbol demapping
