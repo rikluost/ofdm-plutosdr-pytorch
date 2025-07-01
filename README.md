@@ -2,19 +2,19 @@
 
 ## Introduction
 
-This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
+This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception using the same SDR both for transmitting and receiving. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
 
-Beyond classical Least Squares (LS) channel estimation and Zero Forcing (ZF) equalization, this implementation introduces a neural network (NN)-based receiver that predicts bits directly from IQ signals following the Discrete Fourier Transform (DFT) block. The project supports dataset generation, model training, and testing over both simulated channels and real radio interfaces.
+Beyond classical Least Squares (LS) channel estimation and Zero Forcing (ZF) equalization, this implementation introduces a neural network (NN)-based receiver that predicts bits directly from IQ signals following the Discrete Fourier Transform (DFT) block at the receiver. The project also supports dataset generation, model training, and testing over both simulated channels and real radio interfaces.
 
-A central contribution is the comparison of an NN-based receiver—trained on simulated channels and tested over-the-air or with simulated data—against the LS/ZF approach. The NN model, inspired by the DeepRx architecture (Honkala et al., 2021), uses a simplified structure to demonstrate that data-driven PHY can meet or exceed classical performance in practical settings.
+A central contribution is the functionality allowing comparison of an NN-based receiver—trained on simulated channels and tested over-the-air or with simulated data—against the LS/ZF approach. The NN model, inspired by the DeepRx architecture (Honkala et al., 2021), uses a simplified structure to demonstrate that data-driven PHY can meet or exceed classical performance in practical settings.
 
 ## Short literature review
 
-OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. SDR platforms the ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation. "PySDR: A Guide to SDR and DSP using Python" [5] and DSPIllustrations [6] provides insights into use of SDR and signal processing concepts using python.
+OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. The ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation. Web sites "PySDR: A Guide to SDR and DSP using Python" [5] and "DSPIllustrations" [6] provide insights into use of SDR and signal processing concepts using python.
 
-Recent research applies deep learning to the PHY, with Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. 
+Recent research applies deep learning to the PHY. Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. 
 
-## Python implementation
+## Python libraries and Jupyter noteboks
 
 ### Prerequisites
 
@@ -23,7 +23,6 @@ Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio
 TODO: Some additional libraries may be required - update.
 
 PlutoSDR required for hardware experiments.
-
 
 ### Installation
 
@@ -39,22 +38,24 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 - `40-receiver-training.ipynb`: Training and validation of a ResNet-style, fully convolutional NN-based receiver.
 - `50-test-receivers.ipynb`: Performance comparison between CNNNN-based and LS/ZF receivers.
 
-#### Supporting Code and Data
+#### Key libraries and files
 - `SDR_Pluto.py`: SDR interface utilities.
 - `OFDM_SDR_Functions_torch.py`: OFDM, channel simulation, and PHY utilities.
 - `config.py`: Configurations and dataset classes.
 - `models_local.py`: PyTorch architectures for NN-based receivers.
+
+#### Key folders
 - `data/`: Trained models, weights, and datasets.
 - `pics/`, `pics_doc/`: Saved plots for analysis and documentation.
 
 
 ## Introduction to the implemented OFDM workflow
 
-The following workflow covers TTI Mask Creation with Pilot Symbols, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation/Over The Air Transmission, Synchronization, Channel Estimation, Equalization, Symbol Demapping, Data Stream Recreation, and Bit Error Rate (BER) Calculation.
+The workflow covers TTI Mask Creation with Pilot Symbols, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation / Over The Air Transmission, Synchronization, Channel Estimation, Equalization, Symbol Demapping, and Bit Error Rate (BER) Calculation.
 
 ### TTI Mask Creation
 
-Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, only one pilot symbol is possible.
+Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, pilots in only one OFDM-symbol is possible, though modifying this should be easy.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImask.png) 
 
@@ -62,22 +63,22 @@ Fig 1. TTI mask.
 
 ### Data stream creation
 
-A data stream is created for filling the TTI PDSCH resources with random data for the purpose of transmission. This data is in the following stes used for modulating the TTI, and the data is also stored to enable comparison with the received data for Bit Error Rate (BER) calculation at the receiver. This comparison helps in assessing the integrity of the received data and the performance of the communication system.
+A data stream is created for filling the TTI PDSCH resources with random data. This data is in the following stages used for modulating the TTI, and the data is also stored to enable comparison with the received data after demodulation and demapping for Bit Error Rate (BER) calculation at the receiver. 
 
 ### Serial to parallel
 
-The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups defined by the modulation order. The number of the groups equals to the number of PDSCH elements in one TTI.
+The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups where the size is defined by the modulation order. The number of the groups equals to the total number of PDSCH elements in one TTI.
 
 ### Modulation
 
 The process of encoding the bits onto the different subcarriers by varying their amplitude and phase using M-QAM-modulation, according to the data being transmitted.
 
-Example of the constellation of 16-QAM modulation scheme:
+Figures 2 and 3 illustrate example cases of 16-QAM constellation and fully populated TTI where the colors are defined by the magnitude of each complex vector.
+
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/QAMconstellation.png) 
 
 Fig 2. Constellation.
 
-The TTI mask after filled with pilots and modulated symbols:
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImod.png) 
 
 Fig 3. Modulated TTI.
@@ -101,30 +102,30 @@ where:
 - $\mathbf{x}$ is the transmitted signal vector
 - $\mathbf{n}$ is the noise vector
 
-$\mathbf{H}$, the radio channel matrix, can be constructed here either by transmitting the signal $\mathbf{x}$ with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified randomized radio channel model. Noise, in case of SDR is naturally injected into the signal, while in case of using simulated model, it is added separately.
+$\mathbf{H}$, the radio channel matrix, can be constructed here either by transmitting the signal $\mathbf{x}$ with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified randomized radio channel model. Noise, in case of SDR, is naturally injected into the signal, while in case of using simulated model, it is added in the received signal.
 
 #### Transmission of IQ signals (SDR)
 
-The signals can be passed through the SDR transmitter, or through the simulated radio channel. The below graph shows the power spectral density of transmitted signal $\mathbf{x}$:
+The signals can be passed through the SDR transmitter, or through a simulated radio channel. Figure 4 below shows an example of the power spectral density of transmitted signal $\mathbf{x}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_TX.png)
 
-Fig 4. Power spectral density of the signal fed to the SDR transmitter.
+Fig 4. Power spectral density of the signal ready for transmission.
 
 #### Reception of IQ signals (SDR)
 
-The signal can be received by the SDR receiver, which translates it to time domain IQ signals, or alternatively by using the output of simulated radio channel. The below graph shows the power spectral density of received signal $\mathbf{y}$:
+The signal can be received by the SDR receiver, which translates it to time domain IQ signals, or alternatively by using the output of simulated radio channel. The graph in Figure 5 shows an example of the power spectral density of received signal $\mathbf{y}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_RX.png) 
 
-Fig 5. Power spectral density of the signal received from the SDR receiver.
+Fig 5. Power spectral density of the signal.
 
 ### Synchronisation
-PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps, this has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. 
+PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps. This has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. Figure 6 shows an example of the correlation of transmitted and received signals at symbol level. Maximum correlation is used to identify the first symbol.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/corr.png) 
 
-Fig 6. Synchronisation by correlation. ABS of symbols from 10 before to 50 after the detected start of the signal.
+Fig 6. Synchronisation by correlation. ABS correlation of symbols from 10 before to 50 after the detected start of the signal.
 
 ### CP Removal
 
@@ -132,8 +133,7 @@ Unmodulated samples between the TTI's are injected in the cyclic transmission to
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXsignal_sync.png) 
 
-Fig 7. CP Removal
-
+Fig 7. CP Removal by using a mask after synchronization.
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 
@@ -141,16 +141,15 @@ The received time-domain signal is converted back into the frequency domain usin
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTI_RX.png) 
 
-Fig 8. Received TTI before the equalisation.
-
+Fig 8. Received TTI after synchronization, but before the equalization.
 
 ### Channel Estimation
 
 Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
 
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/ChannelEstimate.png) 
+![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/ChannelEstimateAbs.png) 
 
-Fig 9. Absolute values of the received pilot symbols.
+Fig 9. Absolute values of the received pilot symbols with interpolations.
 
 ### Equalization
 
