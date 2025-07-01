@@ -145,7 +145,7 @@ Fig 8. Received TTI after synchronization, but before the equalization.
 
 ### Channel Estimation
 
-Channel estimation involves determining the properties of the transmission channel from pilot symbols to adaptively adjust the receiver and mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain symbol is can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver wiht only one pilot symbol seem to perform better in particular with mobile radio environment than the traditional receiver implemented here.
+In case of conventional receiver, channel estimation involves determining the properties of the transmission channel from pilot symbols to mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain OFDM symbol can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver with only one OFDM pilot symbol allocated for pilots seem to perform better in particular with mobile radio environment than the more conventional LS/ZF based receiver implemented here.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/ChannelEstimateAbs.png) 
 
@@ -153,11 +153,11 @@ Fig 9. Absolute values of the received pilot symbols with interpolations.
 
 ### Equalization
 
-Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. 
+Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. Here Zero Forcing algorithm is implemented.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXdSymbols.png) 
 
-Fig 10. Received symbols of the PDCCH symbols of one TTI after signal equalization.
+Fig 10. Received symbols of the PDCCH symbols of one TTI before and after signal equalization.
 
 ### Symbol demapping
 
@@ -181,17 +181,11 @@ The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates ra
 
 To showcase the setup, a training dataset containing 20,000 samples, each with randomized data and radio channel characteristics, was utilized to train a model as defined in the `models_local.py` file. Although the potential exists for using a much larger dataset, the training in this instance was completed only in about 10 minutes. It was halted as there appeared to be no further improvement in performance, a detail that is evident in Fig 10 included in the documentation.
 
-The training process and its nuances are detailed in the 40-training-NN-based-receiver.ipynb notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance.
+The training process and its nuances are detailed in the `40-training-NN-based-receiver.ipynb` notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance. Figure 11 below shows the performance of an NN-based model during training. Training here was done using simulated radio channel, while validation was performed by using SDR data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_loss.png) 
 
-Fig 11. The model performance during the training process
-
-Not only the training loss and validation loss were observed, but also the BER of the system with validation data was monitored, as seen in Fig 11.
-
-![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_ber.png) 
-
-Fig 12. Bit Error Rate (BER) during the training process
+Fig 11. The model performance during the training proces
 
 ### Comparing performance on testset
 
@@ -199,11 +193,11 @@ Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and i
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/BER_distribution_testset_log_scale.png) 
 
-Fig 13. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
+Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/Performance_LS_nn.png) 
 
-Fig 14. Performance comparison between the NN-based and classic receivers over real-life radio interface
+Fig 13. Performance comparison between the NN-based and classic receivers over real-life radio interface
 
 ## License
 
