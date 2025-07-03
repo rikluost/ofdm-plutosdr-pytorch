@@ -1,14 +1,14 @@
-# OFDM-PlutoSDR: Bridging SDR, OFDM and AI for Next-Gen Wireless Communication
+# OFDM-PlutoSDR: Testing SDR, OFDM and AI receivers for Next-Gen Wireless Communication
 
 ## Introduction
 
-This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception using the same SDR both for transmitting and receiving. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
+This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
 
 Beyond classical Least Squares (LS) channel estimation and Zero Forcing (ZF) equalization, this implementation introduces a neural network (NN)-based receiver that predicts bits directly from IQ signals following the Discrete Fourier Transform (DFT) block at the receiver. The project also supports dataset generation, model training, and testing over both simulated channels and real radio interfaces.
 
 A central contribution is the functionality allowing comparison of an NN-based receiver—trained on simulated channels and tested over-the-air or with simulated data—against the LS/ZF approach. The NN model, inspired by the DeepRx architecture (Honkala et al., 2021), uses a simplified structure to demonstrate that data-driven PHY can meet or exceed classical performance in practical settings.
 
-## Short literature review
+## Brief literature review
 
 OFDM, originally formalized for multichannel data transmission by Chang [1], is foundational to contemporary wireless systems. Goldsmith [3] provides core theory on wireless channels, enabling practical OFDM deployment. The ADALM-Pluto board [9] have lowered the barrier for prototyping and over-the-air experimentation. Web sites "PySDR: A Guide to SDR and DSP using Python" [5] and "DSPIllustrations" [6] provide insights into use of SDR and signal processing concepts using python.
 
@@ -32,26 +32,41 @@ git clone https://github.com/rikluost/pluto # for the latest development version
 
 ### Key files and folders
 
-#### Example Notebooks
-- `10-ofdm-example-func.ipynb`: Full OFDM Tx/Rx chain, comparing classical LS/ZF and DeepRx-style NN receivers.
-- `30-dataset-creator.ipynb`: Dataset generator for training NN-based receivers with random data and simulated channel.
-- `40-receiver-training.ipynb`: Training and validation of a ResNet-style, fully convolutional NN-based receiver.
-- `50-test-receivers.ipynb`: Performance comparison between CNNNN-based and LS/ZF receivers.
+#### Jupyter Notebooks
+- `10-ofdm-example-func.ipynb`: Full OFDM Tx/Rx chain, comparing classical LS/ZF and DeepRx-style NN receivers for one TTI at a time.
+- `30-dataset-creator.ipynb`: Dataset generator for training and testing receivers. Generation can be done either using SDR orchannel simulations.
+- `40-receiver-training.ipynb`: Training of the implemented fully convolutional neural network (FCNN)-based receiver.
+- `50-test-receivers.ipynb`: Performance comparison between FCNN-based and LS/ZF receivers.
 
 #### Key libraries and files
 - `SDR_Pluto.py`: SDR interface utilities.
-- `OFDM_SDR_Functions_torch.py`: OFDM, channel simulation, and PHY utilities.
-- `config.py`: Configurations and dataset classes.
+- `OFDM_SDR_Functions_torch.py`: OFDM, channel simulation, and PHY-processing utilities.
+- `config.py`: Configuration and pyTorch dataset class.
 - `models_local.py`: PyTorch architectures for NN-based receivers.
 
 #### Key folders
 - `data/`: Trained models, weights, and datasets.
 - `pics/`, `pics_doc/`: Saved plots for analysis and documentation.
 
-
 ## Introduction to the implemented OFDM workflow
 
 The workflow covers TTI Mask Creation with Pilot Symbols, Data Stream Creation, Modulation, CP Addition, Radio Channel Simulation / Over The Air Transmission, Synchronization, Channel Estimation, Equalization, Symbol Demapping, and Bit Error Rate (BER) Calculation.
+
+Most processing blocks come with illustrations, for creating these, the following parameters were used:
+
+Radio channel:
+- frequency: 3500MHz
+- delay spread: 0 - 300us, 
+- Channel: TDL up to 3 taps, resolution defined by sampling frequency
+- velocity: up to 30m/s, 
+- Doppler spread model: Jakes with 16 sinusoids per tap.
+
+OFDM:
+- FFT size: 128, 100 modulated subcarriers
+- Subcarrier spacing: 15kHz
+- Cyclic prefix: 6
+- Modulation: 16-QAM
+
 
 ### TTI Mask Creation
 
@@ -120,16 +135,16 @@ The signal can be received by the SDR receiver, which translates it to time doma
 
 Fig 5. Power spectral density of the signal.
 
-### Synchronisation
-PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps. This has been solved in this implementation by utilising cyclic transmissions, and time domain synchronisation by using cross-correlation. Frequency domain correction is not required as TX and RX utilise the same physical clock. Figure 6 shows an example of the correlation of transmitted and received signals at symbol level. Maximum correlation is used to identify the first symbol.
+### Synchronization
+PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps. This has been solved in this implementation by utilizing cyclic transmissions, and time domain synchronization by using cross-correlation. Frequency domain correction is not required as TX and RX utilize the same physical clock. Figure 6 shows an example of the correlation of transmitted and received signals at symbol level. Maximum correlation is used to identify the first symbol.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/corr.png) 
 
-Fig 6. Synchronisation by correlation. ABS correlation of symbols from 10 before to 50 after the detected start of the signal.
+Fig 6. Synchronization by correlation. ABS correlation of symbols from 10 before to 50 after the detected start of the signal.
 
 ### CP Removal
 
-Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronisation, the CP from each received OFDM symbol is discarded before further processing.
+Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronization, the CP from each received OFDM symbol is discarded before further processing.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXsignal_sync.png) 
 
@@ -175,35 +190,43 @@ Compare the original transmitted bit stream with the received bit stream, bit by
 
 ### Training data generation
 
-The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel. It stores the OFDM data after reception, cyclic prefic removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
+The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel. It stores the OFDM data after reception, cyclic prefix removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
 
 ### Training a NN-based receiver model
 
-To showcase the setup, a training dataset containing 20,000 samples, each with randomized data and radio channel characteristics, was utilized to train a model as defined in the `models_local.py` file. Although the potential exists for using a much larger dataset, the training in this instance was completed only in about 10 minutes. It was halted as there appeared to be no further improvement in performance, a detail that is evident in Fig 10 included in the documentation.
+To showcase the setup, a training dataset containing 20,000 samples, each with randomized data and radio channel characteristics, was utilized to train a model as defined in the `models_local.py` file. Although the potential exists for using a much larger dataset, the training in this instance was completed in about 10-hours. It was manually halted, further training may yield better results. The training was done with Apple M1-based laptop.
 
 The training process and its nuances are detailed in the `40-training-NN-based-receiver.ipynb` notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance. Figure 11 below shows the performance of an NN-based model during training. Training here was done using simulated radio channel, while validation was performed by using SDR data.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_loss.png) 
 
-Fig 11. The model performance during the training proces
+Fig 11. The model performance during the training process
 
 ### Comparing performance on testset
 
-Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the test dataset saved earlier. It implements both the NN-based receiver as well as the LS/ZF based receiver used in the OFDM example notebook. The perormance on the testset is compared and the distributions of the BERs are shown in Fig 12, 13. 
+Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the earlier saved test dataset. It implements both the NN-based receiver and the LS/ZF based receiver used in the OFDM example notebook. The perormance on the test set is compared and the distributions of the BERs are shown in Figures 12, 13. The performance comparison here was tested against simulated data at 3500MHz, 30m/s. Figure 12 consists of 5000 data points, while Figure 13 presents only one randomly chosen TTI.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/BER_distribution_testset_log_scale.png) 
 
-Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver.
+Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver over 5000 TTIs.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/Performance_LS_nn.png) 
 
-Fig 13. Performance comparison between the NN-based and classic receivers over real-life radio interface
+Fig 13. Performance comparison between the NN-based and classic receivers over real-life radio interface over one TTI
+
+The gains achieved by using a NN-based receiver are substantial comparing to a simple LS/ZF receiver. These gains can be used for reducing the pilot overhead, and for demonstration purposes, minimal pilot configuration was selected to produce the graphs presented here.
+
+Potential improvements include frequency correction to enable the use of separate SDR radios for transmitting and receiving, and enabling 2T2R for testing with MIMO. Also the radio channel model could be improved.
+
+## Errata
+
+- Channel estimation is done separately for magnitude and phase resulting in problems when phase crosses $|2pi|$. 
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## References and Resources
+## References
 
 [1] Chang, Robert W. "Synthesis of Band-Limited Orthogonal Signals for Multichannel Data Transmission." Bell System Technical Journal 45 (December 1966): 1775-1796.
 
