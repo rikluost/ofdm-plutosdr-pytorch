@@ -1,12 +1,12 @@
 # OFDM-PlutoSDR: Testing SDR, OFDM and AI receivers for Next-Gen Wireless Communication
 
-## Introduction
+## Overview
 
-This project provides an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for 1T1R SISO transmission and reception. Leveraging PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for state-of-the-art Physical Layer (PHY) processing.
+This project delivers an end-to-end Python implementation of an Over-the-Air (OTA) Orthogonal Frequency Division Multiplexing (OFDM) communication system using the Analog Devices ADALM-Pluto (PlutoSDR) for single-antenna (1T1R SISO) transmission and reception. Built on PyTorch, the framework enables seamless integration and experimentation with modern machine learning techniques for next-generation Physical Layer (PHY) processing.
 
-Beyond classical Least Squares (LS) channel estimation and Zero Forcing (ZF) equalization, this implementation introduces a neural network (NN)-based receiver that predicts bits directly from IQ signals following the Discrete Fourier Transform (DFT) block at the receiver. The project also supports dataset generation, model training, and testing over both simulated channels and real radio interfaces.
+In addition to standard Least Squares (LS) channel estimation and Zero-Forcing (ZF) equalization, the framework introduces a neural network (NN)-based receiver capable of predicting transmitted bits directly from IQ samples after the Discrete Fourier Transform (DFT) at the receiver. The platform supports comprehensive dataset generation, model training, and performance evaluation over both simulated channels and real-world radio hardware.
 
-A central contribution is the functionality allowing comparison of an NN-based receiver—trained on simulated channels and tested over-the-air or with simulated data—against the LS/ZF approach. The NN model, inspired by the DeepRx architecture (Honkala et al., 2021), uses a simplified structure to demonstrate that data-driven PHY can meet or exceed classical performance in practical settings.
+A central contribution of this project is the ability to rigorously compare NN-based receivers—trained on simulated channel data and evaluated over-the-air or in simulation—against classical LS/ZF methods. The neural architecture, inspired by the DeepRx design (Honkala et al., 2021), adopts a streamlined structure to demonstrate that data-driven approaches can match or surpass traditional PHY receiver performance in practical SDR scenarios.
 
 ## Brief literature review
 
@@ -18,11 +18,11 @@ Recent research applies deep learning to the PHY. Goodfellow et al. [2] and Pasz
 
 ### Prerequisites
 
-Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio
+Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio, scipy, pandas, jupyter
 
 TODO: Some additional libraries may be required - update.
 
-PlutoSDR required for hardware experiments.
+ADALM-Pluto SDR required for over-the-air experiments.
 
 ### Installation
 
@@ -30,19 +30,23 @@ PlutoSDR required for hardware experiments.
 git clone https://github.com/rikluost/pluto # for the latest development version
 ```
 
-### Key files and folders
+### Files and folders
 
 #### Jupyter Notebooks
-- `10-ofdm-example-func.ipynb`: Full OFDM Tx/Rx chain, comparing classical LS/ZF and DeepRx-style NN receivers for one TTI at a time.
-- `30-dataset-creator.ipynb`: Dataset generator for training and testing receivers. Generation can be done either using SDR orchannel simulations.
-- `40-receiver-training.ipynb`: Training of the implemented fully convolutional neural network (FCNN)-based receiver.
-- `50-test-receivers.ipynb`: Performance comparison between FCNN-based and LS/ZF receivers.
 
-#### Key libraries and files
-- `SDR_Pluto.py`: SDR interface utilities.
-- `OFDM_SDR_Functions_torch.py`: OFDM, channel simulation, and PHY-processing utilities.
-- `config.py`: Configuration and pyTorch dataset class.
-- `models_local.py`: PyTorch architectures for NN-based receivers.
+A series of Jupyter notebooks is provided to facilitate reproducible research, from data generation to training and benchmarking receiver architectures.
+
+- `10-ofdm-example-func.ipynb`: Implements a complete OFDM transmitter and receiver chain. Enables side-by-side comparison of classical LS/ZF equalization with DeepRx-inspired neural network (NN) receivers, processing one Transmission Time Interval (TTI) at a time.
+- `30-dataset-creator.ipynb`: Generates datasets for receiver training and evaluation. Supports dataset creation using either SDR-based over-the-air captures or simulated channel models.
+- `40-receiver-training.ipynb`: Provides tools and examples for training the implemented fully convolutional neural network (FCNN)-based receiver on the generated datasets.
+- `50-test-receivers.ipynb`: Evaluates and benchmarks the performance of FCNN-based neural network receivers against classical LS/ZF approaches on both simulated and real-world data.
+
+#### Libraries, and configuration files
+The following core Python modules and configuration files provide the backbone for SDR operation, OFDM processing, and neural network integration:
+- `SDR_Pluto.py`: Utilities for interfacing with the ADALM-Pluto SDR, including functions for signal transmission, reception, and device configuration.
+- `OFDM_SDR_Functions_torch.py`: A comprehensive suite of functions for OFDM modulation/demodulation, channel simulation, and physical layer (PHY) processing, leveraging PyTorch.
+- `config.py`: Centralized configuration settings for the OFDM system and experiments, including definition of PyTorch dataset classes.
+- `models_local.py`: PyTorch model definitions for NN-based receiver architectures, supporting modular development and rapid experimentation with different neural network designs.
 
 #### Key folders
 - `data/`: Trained models, weights, and datasets.
@@ -57,9 +61,9 @@ Most processing blocks come with illustrations, for creating these, the followin
 Radio channel:
 - frequency: 3500MHz
 - delay spread: 0 - 300us, 
-- Channel: TDL up to 3 taps, resolution defined by sampling frequency
+- Channel: Tapped Delay Line (TDL) with up to 3 taps (resolution set by sampling frequency)
 - velocity: up to 30m/s, 
-- Doppler spread model: Jakes with 16 sinusoids per tap.
+- Doppler spread : Jakes with 16 sinusoids per tap.
 
 OFDM:
 - FFT size: 128, 100 modulated subcarriers
@@ -68,41 +72,39 @@ OFDM:
 - Modulation: 16-QAM
 
 
-### TTI Mask Creation
+### TTI Mask
 
-Creation of a TTI (Transmission Time Interval) mask in an OFDM system involves specifying the constraints for the transmission of different types of data symbols, e.g. pilot symbols, DC, and user data. In this implementation, pilots in only one OFDM-symbol is possible, though modifying this should be easy.
+A Transmission Time Interval (TTI) mask defines resource allocation in each OFDM symbol, specifying positions for pilot symbols, DC, guard bands, and user data. This implementation uses pilots in a single OFDM symbol per TTI for simplicity, though extension to multiple symbols is straightforward
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImask.png) 
 
-Fig 1. TTI mask.
+Fig 1. TTI mask: purple—unmodulated guard bands; yellow—DC; green—pilots; blue—user data.
 
 ### Data stream creation
 
-A data stream is created for filling the TTI PDSCH resources with random data. This data is in the following stages used for modulating the TTI, and the data is also stored to enable comparison with the received data after demodulation and demapping for Bit Error Rate (BER) calculation at the receiver. 
+A random data stream is generated to populate the TTI’s PDSCH resources. This stream is used for OFDM symbol modulation and is retained for post-reception comparison, enabling Bit Error Rate (BER) calculation after demodulation and demapping.
 
 ### Serial to parallel
 
-The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups where the size is defined by the modulation order. The number of the groups equals to the total number of PDSCH elements in one TTI.
+The conversion of a data stream from serial to parallel format involves dividing the incoming serial bit stream into groups where the size is defined by the modulation order and FFT-size. 
 
 ### Modulation
 
-The process of encoding the bits onto the different subcarriers by varying their amplitude and phase using M-QAM-modulation, according to the data being transmitted.
-
-Figures 2 and 3 illustrate example cases of 16-QAM constellation and fully populated TTI where the colors are defined by the magnitude of each complex vector.
+Bits are mapped onto OFDM subcarriers by modulating amplitude and phase using M-QAM, according to the data stream. This enables simultaneous transmission of multiple symbols across subcarriers. Figures 2 and 3 illustrate example cases of 16-QAM constellation and fully populated TTI where the colors are defined by the magnitude of each complex vector.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/QAMconstellation.png) 
 
-Fig 2. Constellation.
+Fig 2. Example 16-QAM constellation.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTImod.png) 
 
-Fig 3. Modulated TTI.
+Fig 3. Modulated TTI, color-coded by magnitude of each complex subcarrier.
 
 ### Conversion of frequency domain symbols into time domain (IFFT)
-The parallel data streams, which have been modulated onto different subcarriers, are transformed from the frequency domain back to the time domain using an IFFT (Inverse Fast Fourier Transform).
+The modulated parallel data streams are transformed from the frequency domain to the time domain using the Inverse Fast Fourier Transform (IFFT), preparing the OFDM symbols for transmission.
 
 ### CP addition
-The Cyclic Prefix (CP) in an OFDM system involves appending a copy of the end of an OFDM symbol to its beginning, mitigating intersymbol interference and maintaining subcarrier orthogonality. This ensures reliable data transmission over multipath channels and simplifies channel equalization and synchronisation at the receiver.
+A cyclic prefix, formed by copying the end of each OFDM symbol to its beginning, is appended to mitigate intersymbol interference. This preserves subcarrier orthogonality, facilitating reliable transmission and simplifying equalization and synchronization in multipath channels.
 
 ### Radio Channel
 
@@ -117,110 +119,110 @@ where:
 - $\mathbf{x}$ is the transmitted signal vector
 - $\mathbf{n}$ is the noise vector
 
-$\mathbf{H}$, the radio channel matrix, can be constructed here either by transmitting the signal $\mathbf{x}$ with an SDR transmitter, and then receiving the signal with an SDR receiver, or by using a simplified randomized radio channel model. Noise, in case of SDR, is naturally injected into the signal, while in case of using simulated model, it is added in the received signal.
+The channel matrix $\mathbf{H}$ can be obtained either by transmitting $\mathbf{x}$ over-the-air with SDR hardware and capturing the received signal, or by applying a randomized channel model in simulation. In SDR-based experiments, noise is naturally introduced by the physical environment; in simulations, noise is explicitly added to the received signal.
 
 #### Transmission of IQ signals (SDR)
 
-The signals can be passed through the SDR transmitter, or through a simulated radio channel. Figure 4 below shows an example of the power spectral density of transmitted signal $\mathbf{x}$:
+The generated IQ signals can be transmitted either via the SDR hardware or through a simulated radio channel. Figure 4 illustrates the power spectral density of a transmitted signal $\mathbf{x}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_TX.png)
 
-Fig 4. Power spectral density of the signal ready for transmission.
+Fig 4. Power spectral density of the transmitted OFDM signal.
 
 #### Reception of IQ signals (SDR)
 
-The signal can be received by the SDR receiver, which translates it to time domain IQ signals, or alternatively by using the output of simulated radio channel. The graph in Figure 5 shows an example of the power spectral density of received signal $\mathbf{y}$:
+The received signal can be captured by the SDR hardware and converted to time-domain IQ samples, or obtained directly from the simulated radio channel output. Figure 5 shows the power spectral density of a received signal $\mathbf{y}$:
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/PSD_RX.png) 
 
-Fig 5. Power spectral density of the signal.
+Fig 5. Power spectral density of the received signal.
 
 ### Synchronization
-PlutoSDR lacks capability of fully syncing TX and RX, e.g. with timestamps. This has been solved in this implementation by utilizing cyclic transmissions, and time domain synchronization by using cross-correlation. Frequency domain correction is not required as TX and RX utilize the same physical clock. Figure 6 shows an example of the correlation of transmitted and received signals at symbol level. Maximum correlation is used to identify the first symbol.
+Due to the absence of hardware timestamping on PlutoSDR, this implementation employs cyclic transmissions and time-domain synchronization using cross-correlation. Since both transmitter and receiver share the same physical clock, frequency correction is unnecessary. The point of maximum correlation identifies the start of the first OFDM symbol. Figure 6 illustrates the correlation between transmitted and received signals at the symbol level.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/corr.png) 
 
-Fig 6. Synchronization by correlation. ABS correlation of symbols from 10 before to 50 after the detected start of the signal.
+Fig 6. Symbol-level cross-correlation for synchronization.
 
 ### CP Removal
 
-Unmodulated samples between the TTI's are injected in the cyclic transmission to allow measuring noise level for the SINR estimation. After the syncronization, the CP from each received OFDM symbol is discarded before further processing.
+Unmodulated samples inserted between TTIs during cyclic transmission enable noise level measurement for SINR estimation. After synchronization, the cyclic prefix is removed from each received OFDM symbol before further processing. Figure 7 illustrates CP removal using a mask.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXsignal_sync.png) 
 
-Fig 7. CP Removal by using a mask after synchronization.
+Fig 7. CP removal after synchronization using a mask.
 
 ### Conversion of time domain IQ symbols into frequency domain (DFT)
 
-The received time-domain signal is converted back into the frequency domain using DFT. This operation separates the data on the different subcarriers, allowing for demodulation and further processing to retrieve the pilot symbols and eventually the transmitted data.
+The synchronized, time-domain IQ signal is transformed back into the frequency domain using the Discrete Fourier Transform (DFT). This operation separates the subcarriers, enabling extraction of pilot symbols and user data for further processing and demodulation.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/TTI_RX.png) 
 
-Fig 8. Received TTI after synchronization, but before the equalization.
+Fig 8. Received TTI after synchronization, before equalization.
 
 ### Channel Estimation
 
-In case of conventional receiver, channel estimation involves determining the properties of the transmission channel from pilot symbols to mitigate the adverse effects of the radio channel. This typically entails using known pilot symbols or training sequences to estimate the channel's frequency response. The output of the channel estimation is $\mathbf{H}$, the estimated channel matrix. Only one time domain OFDM symbol can be allocated for pilot signals, which is not optimal for mobile radios as the channel can change rapidly and hence for example in 4G and 5G two timedomain pilots are commonly used. As can be seen later, NN-based receiver with only one OFDM pilot symbol allocated for pilots seem to perform better in particular with mobile radio environment than the more conventional LS/ZF based receiver implemented here.
+For conventional receivers, channel estimation is performed using known pilot symbols to estimate the channel’s frequency response and mitigate the effects of the radio channel. The result is the estimated channel matrix, $\mathbf{H}$. In this implementation, only a single OFDM symbol is allocated for pilot signals, which is suboptimal for mobile scenarios where the channel can vary rapidly; modern systems (e.g., 4G/5G) typically use two or more pilot symbols in time. As shown later, the NN-based receiver demonstrates improved robustness over LS/ZF methods in mobile environments, even with a single pilot OFDM symbol.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/ChannelEstimateAbs.png) 
 
-Fig 9. Absolute values of the received pilot symbols with interpolations.
+Fig 9. Absolute values of received pilot symbols and their interpolations.
 
 ### Equalization
 
-Equalization is the process of compensating for the impairments introduced by the transmission channel by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. Here Zero Forcing algorithm is implemented.
+Equalization compensates for channel-induced distortions by dividing the received signal $\mathbf{y}$ by the channel estimate $\mathbf{H}$. In this implementation, a Zero Forcing (ZF) equalizer is used.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/RXdSymbols.png) 
 
-Fig 10. Received symbols of the PDCCH symbols of one TTI before and after signal equalization.
+Fig 10.  Constellation of PDCCH symbols from one TTI, before and after equalization.
 
 ### Symbol demapping
 
-This is the process of converting the received modulated symbols back into their corresponding bit representations. It involves translating the complex values from the demodulated subcarriers into the original transmitted bits based on the used modulation scheme.
+Symbol demapping translates the received, equalized constellation points back into their original bit representations according to the modulation scheme, recovering the transmitted data bits from the demodulated subcarriers.
 
 ### Data stream recreation
 
-The data stream is entailed by concatenating the demapped bits from each subcarrier and symbol, converting the parallel data streams back into a single serial data stream
+The final data stream is reconstructed by concatenating the demapped bits from all subcarriers and OFDM symbols, converting the parallel bit streams back into a single serial data stream.
 
 ### Bit Error Rate (BER) calculation
 
-Compare the original transmitted bit stream with the received bit stream, bit by bit and calculate BER.
+The BER is computed by comparing the original transmitted bit stream with the received bit stream on a bit-by-bit basis, quantifying the ratio of erroneous bits to the total number of transmitted bits.
 
 ## NN-based receiver
 
 ### Training data generation
 
-The dataset creation example `30-NN-receiver-dataset-creator.ipynb` generates random data and OFDM TTIs modulated with it. The OFDM signals are sent over the simulated radio channel. It stores the OFDM data after reception, cyclic prefix removal and DFT. The created dataset contains received OFDM symbols and pilot symbols as input, and original bits used for the modulation as labels. There are 6 bits per label, so 64QAM was used here.
+The notebook `30-NN-receiver-dataset-creator.ipynb` generates random data and modulates it onto OFDM TTIs, which are transmitted through a simulated radio channel. After reception, cyclic prefix removal, and DFT, the processed OFDM data are stored. Each dataset entry includes the received OFDM symbols and pilot symbols as input, with the original modulation bits as labels. In this example, 16-QAM modulation is used, yielding 4 bits per label.
 
 ### Training a NN-based receiver model
 
-To showcase the setup, a training dataset containing 20,000 samples, each with randomized data and radio channel characteristics, was utilized to train a model as defined in the `models_local.py` file. Although the potential exists for using a much larger dataset, the training in this instance was completed in about 10-hours. It was manually halted, further training may yield better results. The training was done with Apple M1-based laptop.
+A demonstration training was performed using a dataset of 20,000 samples, each with randomized data and radio channel parameters, as defined in `models_local.py`. While larger datasets can be used, this training was manually stopped after approximately 10 hours on an Apple M1-based laptop. Additional training or hyperparameter optimization may further improve results.
 
-The training process and its nuances are detailed in the `40-training-NN-based-receiver.ipynb` notebook. This example primarily serves as a demonstration of the setup's capabilities; the model architecture and hyperparameters used in this demonstration are basic and further optimization will potentially enhance performance. Figure 11 below shows the performance of an NN-based model during training. Training here was done using simulated radio channel, while validation was performed by using SDR data.
+Details of the training process are provided in `40-training-NN-based-receiver.ipynb`. In this example, training utilized simulated channel data, while validation employed SDR-measured data (cutting the corners a bit). The model architecture and hyperparameters are intentionally kept simple to illustrate the workflow and may be further refined. Figure 11 shows the NN model’s training performance.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/training_loss.png) 
 
-Fig 11. The model performance during the training process
+Fig 11. Model performance during training.
 
 ### Comparing performance on testset
 
-Notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` loads the model and its weights, and the earlier saved test dataset. It implements both the NN-based receiver and the LS/ZF based receiver used in the OFDM example notebook. The perormance on the test set is compared and the distributions of the BERs are shown in Figures 12, 13. The performance comparison here was tested against simulated data at 3500MHz, 30m/s. Figure 12 consists of 5000 data points, while Figure 13 presents only one randomly chosen TTI.
+The notebook `50-compare-ZF-LS-with-NN-based-RX-testset.ipynb` evaluates and compares the NN-based receiver and the conventional LS/ZF receiver using the trained model and a previously saved test dataset. Both receivers are implemented as described in the OFDM example notebook. Performance is benchmarked in terms of Bit Error Rate (BER) on simulated channel data (3500 MHz, 30 m/s).
+
+Figure 12 shows the BER distribution across 5,000 test TTIs, while Figure 13 presents a detailed comparison for a single, randomly chosen TTI. The results demonstrate a significant performance advantage for the NN-based receiver compared to classical approaches, particularly with a minimal pilot configuration.
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/BER_distribution_testset_log_scale.png) 
 
-Fig 12. Bit Error Rate (BER) distribution on the testset, comparing NN-based receiver to ZF/LS receiver over 5000 TTIs.
+Fig 12. BER distribution on the test set: NN-based receiver vs. ZF/LS receiver (5,000 TTIs).
 
 ![alt text](https://github.com/rikluost/ofdm-plutosdr-pytorch/blob/main/pics_doc/Performance_LS_nn.png) 
 
-Fig 13. Performance comparison between the NN-based and classic receivers over real-life radio interface over one TTI
+Fig 13. Performance comparison between NN-based and classic receivers for a single TTI.
 
-The gains achieved by using a NN-based receiver are substantial comparing to a simple LS/ZF receiver. These gains can be used for reducing the pilot overhead, and for demonstration purposes, minimal pilot configuration was selected to produce the graphs presented here.
-
-Potential improvements include frequency correction to enable the use of separate SDR radios for transmitting and receiving, and enabling 2T2R for testing with MIMO. Also the radio channel model could be improved.
+The observed gains of the NN-based receiver suggest potential for reducing pilot overhead in practical systems. For demonstration, a minimal pilot configuration was selected. Future improvements may include frequency correction for separate SDR devices, support for 2T2R MIMO testing, and enhanced channel modeling.
 
 ## Errata
 
-- Channel estimation is done separately for magnitude and phase resulting in problems when phase crosses $|2pi|$. 
+- Channel estimation is currently performed separately for magnitude and phase, which can lead to discontinuities or errors when the phase crosses $2\pi$ boundaries.
 
 ## License
 
