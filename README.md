@@ -16,7 +16,7 @@ Recent research applies deep learning to the PHY processing. Goodfellow et al. [
 
 ### Prerequisites
 
-Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio, scipy, pandas, jupyter
+Python > 3.10, PyTorch, numPy, matplotlib, libiio, pylib-iio, scipy, pandas, jupyter. Full list of libraries in `requirements.txt`.
 
 ADALM-Pluto SDR required for over-the-air experiments.
 
