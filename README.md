@@ -12,6 +12,7 @@ OFDM, originally formalized for multichannel data transmission by Chang [1], is 
 
 Recent research applies deep learning to the PHY processing. Goodfellow et al. [2] and Paszke et al. [8] presenting the theoretical and software foundations for deep learning. Honkala et al. [7] show fully convolutional deep receivers (DeepRx) surpassing traditional methods in wireless environments, while Ju et al. [4] compare deep learning with iterative algorithms for joint channel estimation and detection in OFDM. 
 
+
 ## Python libraries and Jupyter noteboks
 
 ### Prerequisites
