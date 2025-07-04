@@ -4,3 +4,4 @@ pylibiio
 scipy
 pandas
 torch
+matplotlib
